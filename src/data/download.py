@@ -31,64 +31,29 @@ DIV2K_URLS = {
     "valid_hr": "http://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_valid_HR.zip",
 }
 
-# Multiple mirrors for Flickr2K (all may not be available; script will try each)
-FLICKR2K_URLS = [
-    "https://cvnote.ddns.net/Flickr2K/Flickr2K.tar.gz",
-    "https://huggingface.co/datasets/zh-plus/Flickr2K/resolve/main/Flickr2K.tar.gz",
-]
+# Flickr2K — 原版 EDSR 论文提供的官方下载地址（SNU 首尔大学服务器）
+FLICKR2K_URL = "https://cv.snu.ac.kr/research/EDSR/Flickr2K.tar"
 
-# Multiple mirrors for benchmark datasets
-BENCHMARK_URLS = {
-    "Set5": [
-        "https://cvnote.ddns.net/SR_test_datasets/Set5.zip",
-        "https://huggingface.co/datasets/lllych/Set5/resolve/main/Set5.zip",
-    ],
-    "Set14": [
-        "https://cvnote.ddns.net/SR_test_datasets/Set14.zip",
-        "https://huggingface.co/datasets/lllych/Set14/resolve/main/Set14.zip",
-    ],
-    "BSD100": [
-        "https://cvnote.ddns.net/SR_test_datasets/BSD100.zip",
-        "https://huggingface.co/datasets/lllych/BSD100/resolve/main/BSD100.zip",
-    ],
-}
+# 测试集打包下载（包含 Set5 + Set14 + BSD100 + Urban100，Figshare 学术平台）
+BENCHMARK_ZIP_URL = "https://figshare.com/ndownloader/articles/21586188"
 
 
 def download_file(url, save_path):
-    """Download a file from url to save_path with progress bar. Returns True on success."""
+    """Download a file from url to save_path with progress bar."""
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
         print(f"  Already exists: {save_path}")
-        return True
-    try:
-        print(f"  Downloading {url}...")
-        response = requests.get(url, stream=True, timeout=(30, 300))
-        response.raise_for_status()
-        total = int(response.headers.get("content-length", 0))
-        with open(save_path, "wb") as f:
-            with tqdm(total=total, unit="B", unit_scale=True) as pbar:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-                    pbar.update(len(chunk))
-        print(f"  Saved to {save_path}")
-        return True
-    except requests.RequestException as e:
-        print(f"  Failed: {e}")
-        return False
-
-
-def download_with_fallback(urls, save_path):
-    """Try multiple URLs for the same file. Returns True if any succeeds."""
-    if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
-        print(f"  Already exists: {save_path}")
-        return True
-    for url in urls:
-        if download_file(url, save_path):
-            return True
-        # Remove partial download on failure
-        if os.path.exists(save_path):
-            os.remove(save_path)
-    return False
+        return
+    print(f"  Downloading {url}...")
+    response = requests.get(url, stream=True, timeout=(30, 300))
+    response.raise_for_status()
+    total = int(response.headers.get("content-length", 0))
+    with open(save_path, "wb") as f:
+        with tqdm(total=total, unit="B", unit_scale=True) as pbar:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+                pbar.update(len(chunk))
+    print(f"  Saved to {save_path}")
 
 
 def extract_zip(zip_path, extract_to):
@@ -102,13 +67,13 @@ def extract_zip(zip_path, extract_to):
     print(f"  Extracted to {extract_to}")
 
 
-def extract_tar_gz(tar_path, extract_to):
-    """Extract a tar.gz file."""
+def extract_tar(tar_path, extract_to):
+    """Extract a tar file (auto-detect compression)."""
     if os.path.exists(extract_to) and len(os.listdir(extract_to)) > 0:
         print(f"  Already extracted: {extract_to}")
         return
     print(f"  Extracting {tar_path}...")
-    with tarfile.open(tar_path, "r:gz") as tf:
+    with tarfile.open(tar_path, "r:*") as tf:
         tf.extractall(extract_to)
     print(f"  Extracted to {extract_to}")
 
@@ -177,16 +142,13 @@ def main():
 
         if not args.skip_flickr2k:
             print("\n=== Downloading Flickr2K ===")
-            save_path = os.path.join(args.flickr2k_root, "Flickr2K.tar.gz")
-            if not download_with_fallback(FLICKR2K_URLS, save_path):
-                print("  Warning: Flickr2K download failed. Training will use DIV2K only.")
+            save_path = os.path.join(args.flickr2k_root, "Flickr2K.tar")
+            download_file(FLICKR2K_URL, save_path)
 
         if not args.skip_benchmark:
-            print("\n=== Downloading Benchmark Sets ===")
-            for name, urls in BENCHMARK_URLS.items():
-                save_path = os.path.join(args.benchmark_root, f"{name}.zip")
-                if not download_with_fallback(urls, save_path):
-                    print(f"  Warning: {name} download failed. Will skip evaluation on this set.")
+            print("\n=== Downloading Benchmark Sets (Figshare bundle) ===")
+            save_path = os.path.join(args.benchmark_root, "benchmark_bundle.zip")
+            download_file(BENCHMARK_ZIP_URL, save_path)
 
     # --- Extract ---
     print("\n=== Extracting DIV2K ===")
@@ -200,16 +162,14 @@ def main():
             extract_zip(zip_path, extract_to)
 
     print("\n=== Extracting Flickr2K ===")
-    tar_path = os.path.join(args.flickr2k_root, "Flickr2K.tar.gz")
+    tar_path = os.path.join(args.flickr2k_root, "Flickr2K.tar")
     if os.path.exists(tar_path):
-        extract_tar_gz(tar_path, args.flickr2k_root)
+        extract_tar(tar_path, args.flickr2k_root)
 
     print("\n=== Extracting Benchmark Sets ===")
-    for name in BENCHMARK_URLS:
-        zip_path = os.path.join(args.benchmark_root, f"{name}.zip")
-        extract_to = os.path.join(args.benchmark_root, name)
-        if os.path.exists(zip_path):
-            extract_zip(zip_path, extract_to)
+    bundle_path = os.path.join(args.benchmark_root, "benchmark_bundle.zip")
+    if os.path.exists(bundle_path):
+        extract_zip(bundle_path, args.benchmark_root)
 
     # --- Pre-crop training patches ---
     print("\n=== Pre-cropping DIV2K train HR patches ===")
