@@ -31,9 +31,10 @@ class TrainDataset(Dataset):
         for patch_dir in patch_dirs:
             if not os.path.exists(patch_dir):
                 continue
-            for img_name in sorted(os.listdir(patch_dir)):
-                if img_name.lower().endswith((".png", ".jpg", ".jpeg", ".bmp")):
-                    self.patch_paths.append(os.path.join(patch_dir, img_name))
+            for root, _, files in os.walk(patch_dir):
+                for img_name in sorted(files):
+                    if img_name.lower().endswith((".png", ".jpg", ".jpeg", ".bmp")):
+                        self.patch_paths.append(os.path.join(root, img_name))
 
     def __len__(self):
         return len(self.patch_paths)
