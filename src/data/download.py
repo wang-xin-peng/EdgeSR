@@ -166,12 +166,32 @@ def main():
     print("\n=== Extracting DIV2K ===")
     for key in DIV2K_URLS:
         zip_path = os.path.join(args.div2k_root, f"{key}.zip")
-        if key == "train_hr":
-            extract_to = os.path.join(args.div2k_root, "DIV2K_train_HR")
+        if not os.path.exists(zip_path):
+            continue
+        target_dir = os.path.join(args.div2k_root, "DIV2K_train_HR" if key == "train_hr" else "DIV2K_valid_HR")
+        if os.path.isdir(target_dir) and any(
+            f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp"))
+            for f in os.listdir(target_dir)
+        ):
+            print(f"  Already extracted: {target_dir}")
+            continue
+        print(f"  Extracting {zip_path}...")
+        # Extract to a temp dir to handle zip internal structure
+        tmp_dir = os.path.join(args.div2k_root, f"_tmp_{key}")
+        os.makedirs(tmp_dir, exist_ok=True)
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(tmp_dir)
+        os.makedirs(target_dir, exist_ok=True)
+        contents = os.listdir(tmp_dir)
+        # If zip has a single wrapper directory, look inside it
+        if len(contents) == 1 and os.path.isdir(os.path.join(tmp_dir, contents[0])):
+            src = os.path.join(tmp_dir, contents[0])
         else:
-            extract_to = os.path.join(args.div2k_root, "DIV2K_valid_HR")
-        if os.path.exists(zip_path):
-            extract_zip(zip_path, extract_to)
+            src = tmp_dir
+        for fname in os.listdir(src):
+            shutil.move(os.path.join(src, fname), os.path.join(target_dir, fname))
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        print(f"  Extracted to {target_dir}")
 
     print("\n=== Extracting Flickr2K ===")
     tar_path = os.path.join(args.flickr2k_root, "Flickr2K.tar")
