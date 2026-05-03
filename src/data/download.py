@@ -15,8 +15,7 @@ import tarfile
 import requests
 from tqdm import tqdm
 from multiprocessing import Pool
-import cv2
-import numpy as np
+from PIL import Image
 
 DIV2K_URLS = {
     "train_hr": "http://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip",
@@ -73,28 +72,28 @@ def extract_tar_gz(tar_path, extract_to):
 
 
 def preprocess_hr_patch(args):
-    """Pre-crop a single HR image into patches."""
+    """Pre-crop a single HR image into patches using PIL."""
     img_path, save_dir, patch_size = args
-    img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    if img is None:
+    try:
+        img = Image.open(img_path).convert("RGB")
+    except Exception:
         print(f"  Warning: could not read {img_path}", flush=True)
         return
-    h, w, _ = img.shape
-    # Ensure dimensions are multiples of patch_size
+    w, h = img.size
     h = h - h % patch_size
     w = w - w % patch_size
     if h == 0 or w == 0:
         return
-    img = img[:h, :w]
+    img = img.crop((0, 0, w, h))
     name = os.path.splitext(os.path.basename(img_path))[0]
     patch_dir = os.path.join(save_dir, name)
     os.makedirs(patch_dir, exist_ok=True)
     idx = 0
     for y in range(0, h, patch_size):
         for x in range(0, w, patch_size):
-            patch = img[y:y + patch_size, x:x + patch_size]
+            patch = img.crop((x, y, x + patch_size, y + patch_size))
             out_path = os.path.join(patch_dir, f"{idx:04d}.png")
-            cv2.imwrite(out_path, patch)
+            patch.save(out_path)
             idx += 1
 
 
