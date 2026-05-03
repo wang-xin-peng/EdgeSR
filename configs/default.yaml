@@ -1,0 +1,37 @@
+# EdgeSR default configuration
+
+# Data
+data:
+  div2k_root: ./data/DIV2K
+  flickr2k_root: ./data/Flickr2K
+  test_root: ./data/benchmark
+  patch_size: 192  # HR patch size
+  scale: 2
+  train_batch_size: 16
+  test_batch_size: 1
+  num_workers: 4
+
+# Model
+model:
+  name: edgesr  # baseline | edgesr
+  n_resblocks: 16
+  n_feats: 64
+  n_earb: 8     # number of EARB blocks (0 for baseline)
+  lcap_threshold: 0.01
+
+# Training
+train:
+  epochs: 600
+  lr: 0.0002
+  weight_decay: 0.0001
+  lr_decay_step: 200
+  lr_decay_factor: 0.5
+  grad_clip: 1.0
+  loss: L1  # L1 | L1+SSIM
+
+# Logging
+log:
+  log_dir: ./logs
+  save_dir: ./checkpoints
+  save_every: 50
+  eval_every: 50
