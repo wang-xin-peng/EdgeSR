@@ -37,8 +37,33 @@ DIV2K_URLS = {
 # Flickr2K — 原版 EDSR 论文提供的官方下载地址（SNU 首尔大学服务器）
 FLICKR2K_URL = "https://cv.snu.ac.kr/research/EDSR/Flickr2K.tar"
 
-# 测试集打包下载（包含 Set5 + Set14 + BSD100 + Urban100，Figshare 学术平台）
-BENCHMARK_ZIP_URL = "https://figshare.com/ndownloader/articles/21586188"
+# 测试集 — 从 SelfExSR GitHub 仓库下载原始图像（Set5 5张 + Set14 14张 + BSD100 100张）
+# GitHub raw 在国内通常可以访问
+BENCHMARK_BASE = "https://raw.githubusercontent.com/jbhuang0604/SelfExSR/master/data"
+
+BENCHMARK_FILES = {
+    "Set5": [
+        "baby", "bird", "butterfly", "head", "woman",
+    ],
+    "Set14": [
+        "baboon", "barbara", "bridge", "coastguard", "comic", "face",
+        "flowers", "foreman", "lenna", "man", "monarch", "pepper", "ppt3", "zebra",
+    ],
+    "BSD100": [str(i) for i in [
+        148026, 148089, 15088, 170057, 175043, 189011, 196027, 197017, 20008,
+        208001, 209070, 21077, 220075, 227040, 24063, 245026, 253027, 260058,
+        27059, 28075, 295087, 301020, 302008, 3096, 310007, 314016, 32070,
+        33015, 34077, 35028, 35070, 36046, 37073, 38092, 41004, 42012, 43070,
+        43074, 45096, 46076, 47096, 48017, 49039, 50077, 502061, 51044, 51055,
+        52016, 52046, 53015, 54082, 54096, 55067, 56003, 57008, 58060, 59030,
+        60079, 61060, 62038, 62041, 63028, 63060, 65010, 65019, 66076, 67076,
+        68015, 69015, 69040, 70056, 71089, 72029, 72035, 73077, 74093, 75057,
+        76044, 77055, 78004, 79019, 80099, 8023, 80805, 81038, 81095, 81192,
+        83023, 84006, 84067, 85041, 86000, 86016, 87015, 87046, 88005, 88039,
+        89026, 90050, 91001, 92005, 92059, 93001, 94079, 94090, 95006, 96094,
+        97006, 97033, 98056, 99000, 99054,
+    ]},
+}
 
 
 def download_file(url, save_path, verify=True):
@@ -156,9 +181,13 @@ def main():
             download_file(FLICKR2K_URL, save_path)
 
         if not args.skip_benchmark:
-            print("\n=== Downloading Benchmark Sets (Figshare bundle) ===")
-            save_path = os.path.join(args.benchmark_root, "benchmark_bundle.zip")
-            download_file(BENCHMARK_ZIP_URL, save_path)
+            print("\n=== Downloading Benchmark Sets (individual images) ===")
+            for name, files in BENCHMARK_FILES.items():
+                print(f"  Downloading {name} ({len(files)} images)...")
+                for fname in files:
+                    url = f"{BENCHMARK_BASE}/{name}/HR/{fname}.bmp"
+                    save_path = os.path.join(args.benchmark_root, name, f"{fname}.bmp")
+                    download_file(url, save_path)
 
     # --- Extract ---
     print("\n=== Extracting DIV2K ===")
@@ -176,10 +205,7 @@ def main():
     if os.path.exists(tar_path):
         extract_tar(tar_path, args.flickr2k_root)
 
-    print("\n=== Extracting Benchmark Sets ===")
-    bundle_path = os.path.join(args.benchmark_root, "benchmark_bundle.zip")
-    if os.path.exists(bundle_path):
-        extract_zip(bundle_path, args.benchmark_root)
+    # Benchmark sets are downloaded as individual files — no extraction needed
 
     # --- Pre-crop training patches ---
     print("\n=== Pre-cropping DIV2K train HR patches ===")
