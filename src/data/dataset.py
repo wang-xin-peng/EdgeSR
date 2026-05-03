@@ -42,7 +42,7 @@ class TrainDataset(Dataset):
         hr_img = Image.open(self.patch_paths[idx]).convert("RGB")
         # If HR patch is larger than needed, randomly crop
         if hr_img.width > self.hr_size or hr_img.height > self.hr_size:
-            i, j, h, w = TF.get_image_size(hr_img)
+            w, h = TF.get_image_size(hr_img)
             top = random.randint(0, h - self.hr_size)
             left = random.randint(0, w - self.hr_size)
             hr_img = TF.crop(hr_img, top, left, self.hr_size, self.hr_size)
