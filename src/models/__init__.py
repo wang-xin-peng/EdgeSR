@@ -1,1 +1,3 @@
-# EdgeSR model module: network architectures
+from .baseline import EDSRBaseline
+
+__all__ = ["EDSRBaseline"]
