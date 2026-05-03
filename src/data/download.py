@@ -35,11 +35,11 @@ BENCHMARK_URLS = {
 def download_file(url, save_path):
     """Download a file from url to save_path with progress bar."""
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    if os.path.exists(save_path):
+    if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
         print(f"  Already exists: {save_path}")
         return
     print(f"  Downloading {url}...")
-    response = requests.get(url, stream=True, timeout=300)
+    response = requests.get(url, stream=True, timeout=(30, 300))
     response.raise_for_status()
     total = int(response.headers.get("content-length", 0))
     with open(save_path, "wb") as f:
@@ -77,6 +77,7 @@ def preprocess_hr_patch(args):
     img_path, save_dir, patch_size = args
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     if img is None:
+        print(f"  Warning: could not read {img_path}", flush=True)
         return
     h, w, _ = img.shape
     # Ensure dimensions are multiples of patch_size
