@@ -22,9 +22,12 @@ import argparse
 import zipfile
 import tarfile
 import requests
+import urllib3
 from tqdm import tqdm
 from multiprocessing import Pool
 from PIL import Image
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DIV2K_URLS = {
     "train_hr": "http://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip",
@@ -38,15 +41,22 @@ FLICKR2K_URL = "https://cv.snu.ac.kr/research/EDSR/Flickr2K.tar"
 BENCHMARK_ZIP_URL = "https://figshare.com/ndownloader/articles/21586188"
 
 
-def download_file(url, save_path):
+def download_file(url, save_path, verify=True):
     """Download a file from url to save_path with progress bar."""
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
         print(f"  Already exists: {save_path}")
         return
     print(f"  Downloading {url}...")
-    response = requests.get(url, stream=True, timeout=(30, 300))
-    response.raise_for_status()
+    try:
+        response = requests.get(url, stream=True, timeout=(30, 300), verify=verify)
+        response.raise_for_status()
+    except requests.exceptions.SSLError:
+        if verify:
+            print("  SSL error, retrying without verification...")
+            download_file(url, save_path, verify=False)
+            return
+        raise
     total = int(response.headers.get("content-length", 0))
     with open(save_path, "wb") as f:
         with tqdm(total=total, unit="B", unit_scale=True) as pbar:
