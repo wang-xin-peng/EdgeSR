@@ -5,7 +5,16 @@ Downloads DIV2K, Flickr2K (training) and Set5, Set14, BSD100 (testing).
 Pre-crops HR images into patches for faster training data loading.
 
 Usage:
-    python src/data/download.py --div2k_root ./data/DIV2K --flickr2k_root ./data/Flickr2K
+    python src/data/download.py --div2k_root ./data/DIV2K
+
+Notes:
+    - Flickr2K is optional. The model trains well on DIV2K alone (900 images).
+    - If downloads fail, place datasets manually in the expected directories:
+      ./data/DIV2K/DIV2K_train_HR/  (800 PNGs)
+      ./data/DIV2K/DIV2K_valid_HR/  (100 PNGs)
+      ./data/benchmark/Set5/        (5 PNGs)
+      ./data/benchmark/Set14/       (14 PNGs)
+      ./data/benchmark/BSD100/      (100 PNGs)
 """
 
 import os
@@ -22,31 +31,64 @@ DIV2K_URLS = {
     "valid_hr": "http://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_valid_HR.zip",
 }
 
-FLICKR2K_URL = "https://cvnote.ddns.net/Flickr2K/Flickr2K.tar.gz"
+# Multiple mirrors for Flickr2K (all may not be available; script will try each)
+FLICKR2K_URLS = [
+    "https://cvnote.ddns.net/Flickr2K/Flickr2K.tar.gz",
+    "https://huggingface.co/datasets/zh-plus/Flickr2K/resolve/main/Flickr2K.tar.gz",
+]
 
+# Multiple mirrors for benchmark datasets
 BENCHMARK_URLS = {
-    "Set5": "https://cvnote.ddns.net/SR_test_datasets/Set5.zip",
-    "Set14": "https://cvnote.ddns.net/SR_test_datasets/Set14.zip",
-    "BSD100": "https://cvnote.ddns.net/SR_test_datasets/BSD100.zip",
+    "Set5": [
+        "https://cvnote.ddns.net/SR_test_datasets/Set5.zip",
+        "https://huggingface.co/datasets/lllych/Set5/resolve/main/Set5.zip",
+    ],
+    "Set14": [
+        "https://cvnote.ddns.net/SR_test_datasets/Set14.zip",
+        "https://huggingface.co/datasets/lllych/Set14/resolve/main/Set14.zip",
+    ],
+    "BSD100": [
+        "https://cvnote.ddns.net/SR_test_datasets/BSD100.zip",
+        "https://huggingface.co/datasets/lllych/BSD100/resolve/main/BSD100.zip",
+    ],
 }
 
 
 def download_file(url, save_path):
-    """Download a file from url to save_path with progress bar."""
+    """Download a file from url to save_path with progress bar. Returns True on success."""
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
         print(f"  Already exists: {save_path}")
-        return
-    print(f"  Downloading {url}...")
-    response = requests.get(url, stream=True, timeout=(30, 300))
-    response.raise_for_status()
-    total = int(response.headers.get("content-length", 0))
-    with open(save_path, "wb") as f:
-        with tqdm(total=total, unit="B", unit_scale=True) as pbar:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-                pbar.update(len(chunk))
-    print(f"  Saved to {save_path}")
+        return True
+    try:
+        print(f"  Downloading {url}...")
+        response = requests.get(url, stream=True, timeout=(30, 300))
+        response.raise_for_status()
+        total = int(response.headers.get("content-length", 0))
+        with open(save_path, "wb") as f:
+            with tqdm(total=total, unit="B", unit_scale=True) as pbar:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+                    pbar.update(len(chunk))
+        print(f"  Saved to {save_path}")
+        return True
+    except requests.RequestException as e:
+        print(f"  Failed: {e}")
+        return False
+
+
+def download_with_fallback(urls, save_path):
+    """Try multiple URLs for the same file. Returns True if any succeeds."""
+    if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
+        print(f"  Already exists: {save_path}")
+        return True
+    for url in urls:
+        if download_file(url, save_path):
+            return True
+        # Remove partial download on failure
+        if os.path.exists(save_path):
+            os.remove(save_path)
+    return False
 
 
 def extract_zip(zip_path, extract_to):
@@ -122,6 +164,8 @@ def main():
     parser.add_argument("--patch_size", type=int, default=192)
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--skip_download", action="store_true", help="Skip download (extract only)")
+    parser.add_argument("--skip_flickr2k", action="store_true", help="Skip Flickr2K download")
+    parser.add_argument("--skip_benchmark", action="store_true", help="Skip benchmark download")
     args = parser.parse_args()
 
     # --- Download ---
@@ -131,14 +175,18 @@ def main():
             save_path = os.path.join(args.div2k_root, f"{key}.zip")
             download_file(url, save_path)
 
-        print("\n=== Downloading Flickr2K ===")
-        save_path = os.path.join(args.flickr2k_root, "Flickr2K.tar.gz")
-        download_file(FLICKR2K_URL, save_path)
+        if not args.skip_flickr2k:
+            print("\n=== Downloading Flickr2K ===")
+            save_path = os.path.join(args.flickr2k_root, "Flickr2K.tar.gz")
+            if not download_with_fallback(FLICKR2K_URLS, save_path):
+                print("  Warning: Flickr2K download failed. Training will use DIV2K only.")
 
-        print("\n=== Downloading Benchmark Sets ===")
-        for name, url in BENCHMARK_URLS.items():
-            save_path = os.path.join(args.benchmark_root, f"{name}.zip")
-            download_file(url, save_path)
+        if not args.skip_benchmark:
+            print("\n=== Downloading Benchmark Sets ===")
+            for name, urls in BENCHMARK_URLS.items():
+                save_path = os.path.join(args.benchmark_root, f"{name}.zip")
+                if not download_with_fallback(urls, save_path):
+                    print(f"  Warning: {name} download failed. Will skip evaluation on this set.")
 
     # --- Extract ---
     print("\n=== Extracting DIV2K ===")
