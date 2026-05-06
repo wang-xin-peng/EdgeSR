@@ -206,14 +206,17 @@ def main():
         print(f"  Extracting {tar_path}...")
         with tarfile.open(tar_path, "r:*") as tf:
             tf.extractall(extract_dir)
-        # Move HR files: _tmp_extract/benchmark/{name}/HR/* → benchmark_root/{name}/*
+        # Move HR files: _tmp_extract/benchmark/{name}/HR/* → benchmark_root/{target_name}/*
+        # Map EDSR tar directory names to expected names
+        _DIR_MAP = {"B100": "BSD100", "Set5": "Set5", "Set14": "Set14", "Urban100": "Urban100"}
         src_root = os.path.join(extract_dir, "benchmark")
         if os.path.exists(src_root):
             for name in os.listdir(src_root):
                 hr_dir = os.path.join(src_root, name, "HR")
                 if not os.path.isdir(hr_dir):
                     continue
-                target = os.path.join(args.benchmark_root, name)
+                target_name = _DIR_MAP.get(name, name)
+                target = os.path.join(args.benchmark_root, target_name)
                 os.makedirs(target, exist_ok=True)
                 for fname in os.listdir(hr_dir):
                     shutil.move(os.path.join(hr_dir, fname), os.path.join(target, fname))
