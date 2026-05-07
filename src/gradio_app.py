@@ -161,4 +161,4 @@ if __name__ == "__main__":
     print("Model loaded. Launching Gradio demo...")
 
     demo = create_demo(model, device)
-    demo.launch(server_port=args.port, share=args.share)
+    demo.launch(server_name="0.0.0.0", server_port=args.port, share=args.share)
