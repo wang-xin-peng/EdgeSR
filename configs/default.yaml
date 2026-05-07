@@ -10,6 +10,7 @@ data:
   train_batch_size: 16
   test_batch_size: 1
   num_workers: 4
+  degradation: true  # apply blur/noise/JPEG before downsampling for real-world robustness
 
 # Device
 device: cuda  # cuda (default) | cpu | auto

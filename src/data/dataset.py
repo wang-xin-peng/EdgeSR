@@ -12,21 +12,25 @@ import torchvision.transforms.functional as TF
 from PIL import Image
 import numpy as np
 
+from .degradation import apply_degradation
+
 
 class TrainDataset(Dataset):
     """Training dataset loading HR patches and generating LR via bicubic downsampling."""
 
-    def __init__(self, patch_dirs, scale=2, patch_size=96, augment=True):
+    def __init__(self, patch_dirs, scale=2, patch_size=96, augment=True, degradation=True):
         """
         Args:
             patch_dirs: list of directories containing HR patch images
             scale: upsampling factor (2 or 4)
             patch_size: LR patch size (HR will be patch_size * scale)
             augment: whether to apply random flip/rotation
+            degradation: whether to apply real-world degradation (blur/noise/JPEG)
         """
         self.scale = scale
         self.hr_size = patch_size * scale
         self.augment = augment
+        self.degradation = degradation
         self.patch_paths = []
         for patch_dir in patch_dirs:
             if not os.path.exists(patch_dir):
@@ -49,6 +53,9 @@ class TrainDataset(Dataset):
             hr_img = TF.crop(hr_img, top, left, self.hr_size, self.hr_size)
         else:
             hr_img = TF.resize(hr_img, (self.hr_size, self.hr_size), Image.BICUBIC)
+        # Apply real-world degradation before downsampling
+        if self.degradation:
+            hr_img = apply_degradation(hr_img)
         # Generate LR via bicubic downsampling
         lr_size = self.hr_size // self.scale
         lr_img = TF.resize(hr_img, (lr_size, lr_size), Image.BICUBIC)
@@ -108,6 +115,7 @@ def create_train_dataloader(config):
         scale=config["data"]["scale"],
         patch_size=config["data"]["patch_size"] // config["data"]["scale"],
         augment=True,
+        degradation=config["data"].get("degradation", False),
     )
     return DataLoader(
         dataset,
