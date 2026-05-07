@@ -166,7 +166,7 @@ if __name__ == "__main__":
                     "optimizer": optimizer.state_dict(),
                     "scheduler": scheduler.state_dict(),
                     "psnr": val_psnr,
-                }, os.path.join(config["log"]["save_dir"], "best.pt"))
+                }, os.path.join(config["log"]["save_dir"], f"{config['model']['name']}_best.pt"))
                 print(f"  New best model saved (PSNR: {val_psnr:.4f})")
         else:
             print(f"Epoch [{epoch+1}/{config['train']['epochs']}] Loss: {train_loss:.6f}")
@@ -178,6 +178,6 @@ if __name__ == "__main__":
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict(),
                 "psnr": val_psnr if (epoch + 1) % config["log"]["eval_every"] == 0 else 0,
-            }, os.path.join(config["log"]["save_dir"], f"checkpoint_{epoch+1}.pt"))
+            }, os.path.join(config["log"]["save_dir"], f"{config['model']['name']}_checkpoint_{epoch+1}.pt"))
 
         scheduler.step()
