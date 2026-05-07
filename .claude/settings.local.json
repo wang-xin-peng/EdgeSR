@@ -6,9 +6,7 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git worktree *)",
-      "Bash(python -c \"import ast; ast.parse\\(open\\('src/data/download.py'\\).read\\(\\)\\); print\\('Syntax OK'\\)\")",
-      "Bash(git log *)",
-      "Bash(git diff *)"
+      "Bash(git push *)"
     ]
   }
 }

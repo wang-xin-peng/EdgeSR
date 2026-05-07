@@ -1,5 +1,6 @@
 # Worktrees
 .worktrees/
+.claude/
 
 # Python
 __pycache__/
@@ -9,7 +10,7 @@ dist/
 build/
 
 # Data
-/data/
+data/
 
 # Output
 logs/
