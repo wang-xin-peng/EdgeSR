@@ -11,6 +11,8 @@ data:
   test_batch_size: 1
   num_workers: 4
   degradation: true  # apply blur/noise/JPEG before downsampling for real-world robustness
+  use_realsr: false  # use RealSR real LR-HR pairs instead of synthetic degradation
+  realsr_root: ./data/RealSR (ICCV2019)
 
 # Device
 device: cuda  # cuda (default) | cpu | auto
