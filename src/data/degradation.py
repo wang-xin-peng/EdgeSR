@@ -1,7 +1,12 @@
 """
 Real-world degradation functions for blind SR training.
 
-Pipeline: HR → Blur → Noise → JPEG compression → Bicubic down → LR
+Pipeline:
+  HR → Strong Blur (optical defocus) → Bicubic down → Noise + JPEG → LR
+
+Strong blur is applied on HR before downsampling to simulate camera defocus.
+Noise and JPEG are applied on LR after downsampling to simulate sensor noise
+and compression artifacts — these won't be washed out by downscaling.
 """
 
 import random
@@ -10,14 +15,13 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 
-def random_gaussian_blur(img, kernel_range=(3, 7), sigma_range=(0.5, 3.0)):
-    """Apply Gaussian blur with random kernel size and sigma."""
-    kernel_size = random.randrange(kernel_range[0], kernel_range[1] + 1, 2)
+def random_gaussian_blur(img, sigma_range=(3.0, 10.0)):
+    """Apply strong Gaussian blur (simulates camera defocus)."""
     sigma = random.uniform(*sigma_range)
     return img.filter(ImageFilter.GaussianBlur(radius=sigma))
 
 
-def random_noise(img, noise_range=(1, 15)):
+def random_noise(img, noise_range=(1, 30)):
     """Add Gaussian noise with random sigma."""
     np_img = np.array(img).astype(np.float32)
     sigma = random.uniform(*noise_range)
@@ -26,7 +30,7 @@ def random_noise(img, noise_range=(1, 15)):
     return Image.fromarray(np_img)
 
 
-def random_jpeg(img, quality_range=(30, 95)):
+def random_jpeg(img, quality_range=(15, 80)):
     """Apply JPEG compression with random quality."""
     quality = random.randint(*quality_range)
     buf = io.BytesIO()
@@ -35,32 +39,23 @@ def random_jpeg(img, quality_range=(30, 95)):
     return Image.open(buf).convert("RGB")
 
 
-def apply_degradation(hr_img, prob=0.8, use_blur=True, use_noise=True, use_jpeg=True):
-    """
-    Apply random degradation to HR image before downsampling.
-
-    Args:
-        hr_img: PIL Image (HR patch)
-        prob: probability of applying degradation
-        use_blur: enable Gaussian blur
-        use_noise: enable Gaussian noise
-        use_jpeg: enable JPEG compression
-
-    Returns:
-        degraded PIL Image
-    """
+def degrade_hr(hr_img, prob=0.9):
+    """Apply strong blur on HR before downsampling (optical defocus)."""
     if random.random() > prob:
         return hr_img
-
     img = hr_img.copy()
-
-    if use_blur and random.random() < 0.6:
+    if random.random() < 0.8:
         img = random_gaussian_blur(img)
+    return img
 
-    if use_noise and random.random() < 0.5:
+
+def degrade_lr(lr_img, prob=0.9):
+    """Apply noise and JPEG on LR after downsampling (sensor + compression)."""
+    if random.random() > prob:
+        return lr_img
+    img = lr_img.copy()
+    if random.random() < 0.7:
         img = random_noise(img)
-
-    if use_jpeg and random.random() < 0.4:
+    if random.random() < 0.5:
         img = random_jpeg(img)
-
     return img

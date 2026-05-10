@@ -12,7 +12,7 @@ import torchvision.transforms.functional as TF
 from PIL import Image
 import numpy as np
 
-from .degradation import apply_degradation
+from .degradation import degrade_hr, degrade_lr
 
 
 class TrainDataset(Dataset):
@@ -53,12 +53,15 @@ class TrainDataset(Dataset):
             hr_img = TF.crop(hr_img, top, left, self.hr_size, self.hr_size)
         else:
             hr_img = TF.resize(hr_img, (self.hr_size, self.hr_size), Image.BICUBIC)
-        # Apply real-world degradation before downsampling
+        # Apply strong blur on HR (simulates optical defocus), then downsample
         if self.degradation:
-            hr_img = apply_degradation(hr_img)
+            hr_img = degrade_hr(hr_img)
         # Generate LR via bicubic downsampling
         lr_size = self.hr_size // self.scale
         lr_img = TF.resize(hr_img, (lr_size, lr_size), Image.BICUBIC)
+        # Apply noise + JPEG on LR after downsampling (simulates sensor noise / compression)
+        if self.degradation:
+            lr_img = degrade_lr(lr_img)
         # Convert to tensor [0, 1]
         hr_tensor = TF.to_tensor(hr_img)  # [C, H, W], [0, 1]
         lr_tensor = TF.to_tensor(lr_img)
@@ -106,17 +109,85 @@ class TestDataset(Dataset):
         return lr_tensor, hr_tensor
 
 
+class RealSRDataset(Dataset):
+    """RealSR dataset — real LR-HR pairs for blind SR training.
+
+    LR and HR have the same resolution; LR contains real-world degradation
+    (different focal length / camera settings). The LR patch is bicubic-downscaled
+    to serve as model input, while the HR patch remains the target.
+    """
+
+    def __init__(self, realsr_root, scale=2, patch_size=96, cameras=("Canon", "Nikon"), augment=True):
+        self.scale = scale
+        self.hr_size = patch_size * scale
+        self.augment = augment
+        self.pairs = []
+        for cam in cameras:
+            train_dir = os.path.join(realsr_root, cam, "Train", str(scale))
+            if not os.path.isdir(train_dir):
+                continue
+            for f in sorted(os.listdir(train_dir)):
+                if f.endswith("_HR.png"):
+                    base = f.replace("_HR.png", "")
+                    lr_name = f"{base}_LR{scale}.png"
+                    lr_path = os.path.join(train_dir, lr_name)
+                    hr_path = os.path.join(train_dir, f)
+                    if os.path.exists(lr_path):
+                        self.pairs.append((lr_path, hr_path))
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def __getitem__(self, idx):
+        lr_path, hr_path = self.pairs[idx]
+        lr_img = Image.open(lr_path).convert("RGB")
+        hr_img = Image.open(hr_path).convert("RGB")
+        w, h = lr_img.size
+        w = w - w % self.scale
+        h = h - h % self.scale
+        # Random crop at same position (LR and HR are same size)
+        top = random.randint(0, h - self.hr_size)
+        left = random.randint(0, w - self.hr_size)
+        hr_patch = TF.crop(hr_img, top, left, self.hr_size, self.hr_size)
+        lr_patch = TF.crop(lr_img, top, left, self.hr_size, self.hr_size)
+        # Downscale LR patch for model input (model upscales back by scale)
+        lr_input = TF.resize(lr_patch, (self.hr_size // self.scale, self.hr_size // self.scale), Image.BICUBIC)
+        hr_tensor = TF.to_tensor(hr_patch)
+        lr_tensor = TF.to_tensor(lr_input)
+        if self.augment:
+            if random.random() > 0.5:
+                hr_tensor = TF.hflip(hr_tensor)
+                lr_tensor = TF.hflip(lr_tensor)
+            if random.random() > 0.5:
+                hr_tensor = TF.vflip(hr_tensor)
+                lr_tensor = TF.vflip(lr_tensor)
+            k = random.randint(0, 3)
+            if k > 0:
+                hr_tensor = TF.rotate(hr_tensor, 90 * k, expand=False)
+                lr_tensor = TF.rotate(lr_tensor, 90 * k, expand=False)
+        return lr_tensor, hr_tensor
+
+
 def create_train_dataloader(config):
     """Create training DataLoader from config."""
-    div2k_patches = os.path.join(config["data"]["div2k_root"], f"train_patches_{config['data']['patch_size']}")
-    flickr_patches = os.path.join(config["data"]["flickr2k_root"], f"patches_{config['data']['patch_size']}")
-    dataset = TrainDataset(
-        patch_dirs=[div2k_patches, flickr_patches],
-        scale=config["data"]["scale"],
-        patch_size=config["data"]["patch_size"] // config["data"]["scale"],
-        augment=True,
-        degradation=config["data"].get("degradation", False),
-    )
+    use_realsr = config["data"].get("use_realsr", False)
+    if use_realsr:
+        dataset = RealSRDataset(
+            realsr_root=config["data"]["realsr_root"],
+            scale=config["data"]["scale"],
+            patch_size=config["data"]["patch_size"],
+            augment=True,
+        )
+    else:
+        div2k_patches = os.path.join(config["data"]["div2k_root"], f"train_patches_{config['data']['patch_size']}")
+        flickr_patches = os.path.join(config["data"]["flickr2k_root"], f"patches_{config['data']['patch_size']}")
+        dataset = TrainDataset(
+            patch_dirs=[div2k_patches, flickr_patches],
+            scale=config["data"]["scale"],
+            patch_size=config["data"]["patch_size"] // config["data"]["scale"],
+            augment=True,
+            degradation=config["data"].get("degradation", False),
+        )
     return DataLoader(
         dataset,
         batch_size=config["data"]["train_batch_size"],
