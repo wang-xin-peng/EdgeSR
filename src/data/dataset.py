@@ -12,7 +12,7 @@ import torchvision.transforms.functional as TF
 from PIL import Image
 import numpy as np
 
-from .degradation import degrade_hr, degrade_lr
+from .degradation import apply_degradation
 
 
 class TrainDataset(Dataset):
@@ -53,15 +53,12 @@ class TrainDataset(Dataset):
             hr_img = TF.crop(hr_img, top, left, self.hr_size, self.hr_size)
         else:
             hr_img = TF.resize(hr_img, (self.hr_size, self.hr_size), Image.BICUBIC)
-        # Apply strong blur on HR (simulates optical defocus), then downsample
+        # Apply second-order degradation (handles blur + resize + noise + JPEG)
         if self.degradation:
-            hr_img = degrade_hr(hr_img)
-        # Generate LR via bicubic downsampling
-        lr_size = self.hr_size // self.scale
-        lr_img = TF.resize(hr_img, (lr_size, lr_size), Image.BICUBIC)
-        # Apply noise + JPEG on LR after downsampling (simulates sensor noise / compression)
-        if self.degradation:
-            lr_img = degrade_lr(lr_img)
+            lr_img = apply_degradation(hr_img, self.scale)
+        else:
+            lr_size = self.hr_size // self.scale
+            lr_img = TF.resize(hr_img, (lr_size, lr_size), Image.BICUBIC)
         # Convert to tensor [0, 1]
         hr_tensor = TF.to_tensor(hr_img)  # [C, H, W], [0, 1]
         lr_tensor = TF.to_tensor(lr_img)
@@ -109,29 +106,29 @@ class TestDataset(Dataset):
         return lr_tensor, hr_tensor
 
 
-class RealSRDataset(Dataset):
-    """RealSR dataset — real LR-HR pairs for blind SR training.
+class DRealSRDataset(Dataset):
+    """DRealSR dataset — real LR-HR pairs from different DSLR zoom levels.
 
-    LR and HR have the same resolution; LR contains real-world degradation
-    (different focal length / camera settings). The LR patch is bicubic-downscaled
-    to serve as model input, while the HR patch remains the target.
+    LR and HR have different resolutions (LR is smaller by scale factor).
+    Pre-cropped training patches at LR ~380x380, HR ~760x760 for x2.
     """
 
-    def __init__(self, realsr_root, scale=2, patch_size=96, cameras=("Canon", "Nikon"), augment=True):
+    def __init__(self, drealsr_root, scale=2, patch_size=96, augment=True):
         self.scale = scale
+        self.lr_size = patch_size
         self.hr_size = patch_size * scale
         self.augment = augment
         self.pairs = []
-        for cam in cameras:
-            train_dir = os.path.join(realsr_root, cam, "Train", str(scale))
-            if not os.path.isdir(train_dir):
-                continue
-            for f in sorted(os.listdir(train_dir)):
-                if f.endswith("_HR.png"):
-                    base = f.replace("_HR.png", "")
-                    lr_name = f"{base}_LR{scale}.png"
-                    lr_path = os.path.join(train_dir, lr_name)
-                    hr_path = os.path.join(train_dir, f)
+        scale_str = f"x{scale}"
+        train_dir = os.path.join(drealsr_root, scale_str, f"Train_{scale_str}")
+        hr_dir = os.path.join(train_dir, "train_HR")
+        lr_dir = os.path.join(train_dir, "train_LR")
+        if os.path.isdir(hr_dir) and os.path.isdir(lr_dir):
+            for f in sorted(os.listdir(hr_dir)):
+                if f.endswith(".png"):
+                    lr_name = f.replace(f"x{scale}", "x1")
+                    lr_path = os.path.join(lr_dir, lr_name)
+                    hr_path = os.path.join(hr_dir, f)
                     if os.path.exists(lr_path):
                         self.pairs.append((lr_path, hr_path))
 
@@ -142,18 +139,18 @@ class RealSRDataset(Dataset):
         lr_path, hr_path = self.pairs[idx]
         lr_img = Image.open(lr_path).convert("RGB")
         hr_img = Image.open(hr_path).convert("RGB")
-        w, h = lr_img.size
-        w = w - w % self.scale
-        h = h - h % self.scale
-        # Random crop at same position (LR and HR are same size)
-        top = random.randint(0, h - self.hr_size)
-        left = random.randint(0, w - self.hr_size)
-        hr_patch = TF.crop(hr_img, top, left, self.hr_size, self.hr_size)
-        lr_patch = TF.crop(lr_img, top, left, self.hr_size, self.hr_size)
-        # Downscale LR patch for model input (model upscales back by scale)
-        lr_input = TF.resize(lr_patch, (self.hr_size // self.scale, self.hr_size // self.scale), Image.BICUBIC)
+        # Random crop at corresponding positions (LR smaller by scale factor)
+        if lr_img.width > self.lr_size:
+            left = random.randint(0, lr_img.width - self.lr_size)
+            top = random.randint(0, lr_img.height - self.lr_size)
+        else:
+            left, top = 0, 0
+            lr_img = TF.resize(lr_img, (self.lr_size, self.lr_size), Image.BICUBIC)
+            hr_img = TF.resize(hr_img, (self.hr_size, self.hr_size), Image.BICUBIC)
+        lr_patch = TF.crop(lr_img, top, left, self.lr_size, self.lr_size)
+        hr_patch = TF.crop(hr_img, top * self.scale, left * self.scale, self.hr_size, self.hr_size)
         hr_tensor = TF.to_tensor(hr_patch)
-        lr_tensor = TF.to_tensor(lr_input)
+        lr_tensor = TF.to_tensor(lr_patch)
         if self.augment:
             if random.random() > 0.5:
                 hr_tensor = TF.hflip(hr_tensor)
@@ -170,12 +167,12 @@ class RealSRDataset(Dataset):
 
 def create_train_dataloader(config):
     """Create training DataLoader from config."""
-    use_realsr = config["data"].get("use_realsr", False)
-    if use_realsr:
-        dataset = RealSRDataset(
-            realsr_root=config["data"]["realsr_root"],
+    use_drealsr = config["data"].get("use_drealsr", False)
+    if use_drealsr:
+        dataset = DRealSRDataset(
+            drealsr_root=config["data"]["drealsr_root"],
             scale=config["data"]["scale"],
-            patch_size=config["data"]["patch_size"],
+            patch_size=config["data"]["patch_size"] // config["data"]["scale"],
             augment=True,
         )
     else:
