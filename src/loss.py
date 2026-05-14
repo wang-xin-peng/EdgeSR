@@ -29,22 +29,18 @@ class SSIMLoss(torch.nn.Module):
         C1 = 0.01 ** 2
         C2 = 0.03 ** 2
         pad = self.window_size // 2
-        # Move kernel to input device, expand for RGB: [1, 1, 11, 11] → [3, 1, 11, 11], groups=3
         kernel = self.kernel.to(img1.device).expand(3, 1, -1, -1)
 
         mu1 = F.conv2d(F.pad(img1, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
         mu2 = F.conv2d(F.pad(img2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
 
-        mu1_sq = mu1 ** 2
-        mu2_sq = mu2 ** 2
-        mu1_mu2 = mu1 * mu2
+        # Compute variance as conv((x - mu)^2) — always non-negative
+        sigma1_sq = F.conv2d(F.pad((img1 - mu1) ** 2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
+        sigma2_sq = F.conv2d(F.pad((img2 - mu2) ** 2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
+        sigma12 = F.conv2d(F.pad((img1 - mu1) * (img2 - mu2), (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
 
-        sigma1_sq = F.conv2d(F.pad(img1 ** 2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3) - mu1_sq
-        sigma2_sq = F.conv2d(F.pad(img2 ** 2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3) - mu2_sq
-        sigma12 = F.conv2d(F.pad(img1 * img2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3) - mu1_mu2
-
-        ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / (
-            (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2)
+        ssim_map = ((2 * mu1 * mu2 + C1) * (2 * sigma12 + C2)) / (
+            (mu1 ** 2 + mu2 ** 2 + C1) * (sigma1_sq + sigma2_sq + C2)
         )
 
         return 1 - ssim_map.mean()
