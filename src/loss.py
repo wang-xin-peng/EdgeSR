@@ -29,8 +29,8 @@ class SSIMLoss(torch.nn.Module):
         C1 = 0.01 ** 2
         C2 = 0.03 ** 2
         pad = self.window_size // 2
-        # Expand kernel for RGB: [1, 1, 11, 11] → [3, 1, 11, 11], groups=3
-        kernel = self.kernel.expand(3, 1, -1, -1)
+        # Move kernel to input device, expand for RGB: [1, 1, 11, 11] → [3, 1, 11, 11], groups=3
+        kernel = self.kernel.to(img1.device).expand(3, 1, -1, -1)
 
         mu1 = F.conv2d(F.pad(img1, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
         mu2 = F.conv2d(F.pad(img2, (pad, pad, pad, pad), mode="reflect"), kernel, groups=3)
