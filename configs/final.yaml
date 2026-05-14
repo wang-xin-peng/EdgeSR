@@ -1,0 +1,38 @@
+# EdgeSR final training — L1 + SSIM loss, continuation from fine-tuned checkpoint
+
+data:
+  div2k_root: ./data/DIV2K
+  flickr2k_root: ./data/Flickr2K
+  test_root: ./data/benchmark
+  patch_size: 192
+  scale: 2
+  train_batch_size: 16
+  test_batch_size: 1
+  num_workers: 4
+  degradation: true
+  use_drealsr: false
+  drealsr_root: ./data/DRealSR
+
+device: cuda
+
+model:
+  name: edgesr
+  n_resblocks: 16
+  n_feats: 64
+  n_earb: 8
+  lcap_threshold: 0.01
+
+train:
+  epochs: 1100
+  lr: 0.00005
+  weight_decay: 0.0001
+  lr_decay_step: 200
+  lr_decay_factor: 0.5
+  grad_clip: 1.0
+  loss: L1+SSIM
+
+log:
+  log_dir: ./logs
+  save_dir: ./checkpoints
+  save_every: 50
+  eval_every: 50

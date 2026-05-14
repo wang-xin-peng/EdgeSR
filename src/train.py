@@ -18,6 +18,7 @@ from tqdm import tqdm
 
 from src.data.dataset import create_train_dataloader
 from src.models import EDSRBaseline, EdgeSR
+from src.loss import SSIMLoss
 
 
 def get_model(config):
@@ -135,7 +136,11 @@ if __name__ == "__main__":
         gamma=config["train"]["lr_decay_factor"],
     )
     scaler = GradScaler(enabled=use_amp)
-    loss_fn = nn.L1Loss()
+    loss_type = config["train"].get("loss", "L1")
+    if loss_type == "L1+SSIM":
+        loss_fn = lambda sr, hr: nn.L1Loss()(sr, hr) + 0.2 * SSIMLoss()(sr, hr)
+    else:
+        loss_fn = nn.L1Loss()
 
     # Resume
     start_epoch = 0
