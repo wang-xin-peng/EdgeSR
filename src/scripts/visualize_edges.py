@@ -5,6 +5,7 @@ Shows what edge features the EARB blocks extract at different depths.
 
 Usage:
     python src/scripts/visualize_edges.py --checkpoint checkpoints/edgesr_standard_best.pt \
+        --baseline_checkpoint checkpoints/baseline_best.pt \
         --image ./data/benchmark/Set5/butterfly.png --output results/
 """
 
@@ -23,11 +24,12 @@ import torchvision.transforms.functional as TF
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.models.edgesr import EdgeSR
+from src.models.baseline import EDSRBaseline
 from src.models.modules import SobelEdgeConv
 
 
 @torch.no_grad()
-def visualize_edges(checkpoint_path, image_path, output_dir="results"):
+def visualize_edges(checkpoint_path, baseline_checkpoint, image_path, output_dir="results"):
     os.makedirs(output_dir, exist_ok=True)
 
     # Load model
@@ -89,20 +91,32 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
     fig.savefig(save_path, dpi=150)
     print(f"Edge maps saved to {save_path}")
 
-    # Side-by-side comparison: LR vs SR
+    # Side-by-side comparison: LR vs EdgeSR vs Baseline vs HR
     sr_tensor = model(lr_tensor)
-    sr_img = TF.to_pil_image(sr_tensor[0].cpu().clamp(0, 1))
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    # Load baseline model
+    base_ckpt = torch.load(baseline_checkpoint, map_location="cpu", weights_only=True)
+    baseline = EDSRBaseline(n_resblocks=16, n_feats=64, scale=2)
+    baseline.load_state_dict(base_ckpt["model"])
+    baseline.eval()
+    base_sr_tensor = baseline(lr_tensor)
+
+    sr_img = TF.to_pil_image(sr_tensor[0].cpu().clamp(0, 1))
+    base_img = TF.to_pil_image(base_sr_tensor[0].cpu().clamp(0, 1))
+
+    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
     axes[0].imshow(lr_img)
     axes[0].set_title(f"LR Input ({lr_img.size[0]}x{lr_img.size[1]})")
     axes[0].axis("off")
     axes[1].imshow(sr_img)
-    axes[1].set_title(f"SR Output ({sr_img.size[0]}x{sr_img.size[1]})")
+    axes[1].set_title(f"EdgeSR SR")
     axes[1].axis("off")
-    axes[2].imshow(hr_img)
-    axes[2].set_title(f"HR Ground Truth ({hr_img.size[0]}x{hr_img.size[1]})")
+    axes[2].imshow(base_img)
+    axes[2].set_title(f"Baseline SR")
     axes[2].axis("off")
+    axes[3].imshow(hr_img)
+    axes[3].set_title(f"HR Ground Truth ({hr_img.size[0]}x{hr_img.size[1]})")
+    axes[3].axis("off")
     fig.tight_layout()
     save_path = os.path.join(output_dir, "sr_comparison.png")
     fig.savefig(save_path, dpi=150, bbox_inches="tight")
@@ -112,7 +126,8 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True)
+    parser.add_argument("--baseline_checkpoint", type=str, default="../../checkpoints/baseline_best.pt")
     parser.add_argument("--image", type=str, required=True)
     parser.add_argument("--output", type=str, default="results")
     args = parser.parse_args()
-    visualize_edges(args.checkpoint, args.image, args.output)
+    visualize_edges(args.checkpoint, args.baseline_checkpoint, args.image, args.output)
