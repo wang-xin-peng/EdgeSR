@@ -16,6 +16,8 @@ from tqdm import tqdm
 
 from src.data.dataset import create_test_dataloader
 from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
+from src.models.edgesr_pruned import prune_model
+from src.ensemble import self_ensemble
 
 
 def get_model(config, checkpoint_path, device):
@@ -41,6 +43,15 @@ def get_model(config, checkpoint_path, device):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
         )
+    elif model_name == "edgesr_pruned":
+        base = EdgeSR(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
+            lcap_threshold=0.01,
+        )
+        model = prune_model(base, threshold=config["model"].get("prune_threshold", 0.5))
     else:
         raise ValueError(f"Unknown model: {model_name}")
     checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -63,7 +74,7 @@ def compute_ssim_np(img1, img2):
     return ssim_func(img1, img2, channel_axis=-1, data_range=1.0)
 
 
-def evaluate(model, dataloader, device, lpips_model=None):
+def evaluate(model, dataloader, device, lpips_model=None, use_ensemble=False):
     """Evaluate model on a dataset, return dict of metrics."""
     psnr_list = []
     ssim_list = []
@@ -73,7 +84,10 @@ def evaluate(model, dataloader, device, lpips_model=None):
         lr_imgs = lr_imgs.to(device)
         hr_imgs = hr_imgs.to(device)
         with torch.no_grad():
-            sr_imgs = model(lr_imgs)
+            if use_ensemble:
+                sr_imgs = self_ensemble(model, lr_imgs.cpu(), device).to(device)
+            else:
+                sr_imgs = model(lr_imgs)
         scale = hr_imgs.shape[-1] // lr_imgs.shape[-1]
         border = scale
         sr_cropped = sr_imgs[..., border:-border, border:-border]
@@ -100,11 +114,12 @@ def evaluate(model, dataloader, device, lpips_model=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
+    parser.add_argument("--config", type=str, default="configs/edgesr_standard.yaml")
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap", "edgesr_pruned"])
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--lpips", action="store_true", help="Compute LPIPS (requires lpips package)")
+    parser.add_argument("--self-ensemble", action="store_true", help="Use geometric self-ensemble (8x inference)")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -124,7 +139,7 @@ if __name__ == "__main__":
 
     for dataset_name in ["Set5", "Set14", "BSD100"]:
         dataloader, _ = create_test_dataloader(config, dataset_name)
-        results = evaluate(model, dataloader, device, lpips_model)
+        results = evaluate(model, dataloader, device, lpips_model, use_ensemble=args.self_ensemble)
         print(f"\nDataset: {dataset_name}")
         for metric, value in results.items():
             print(f"  {metric}: {value:.6f}")

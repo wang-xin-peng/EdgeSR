@@ -1,0 +1,41 @@
+# EdgeSR pruned: binary LCAP gating at threshold 0.5, then finetune
+# Start from edgesr_standard_best.pt, remove 40% channels, recover quality
+
+experiment: edgesr_pruned
+
+data:
+  div2k_root: ./data/DIV2K
+  flickr2k_root: ./data/Flickr2K
+  test_root: ./data/benchmark
+  patch_size: 192
+  scale: 2
+  train_batch_size: 16
+  test_batch_size: 1
+  num_workers: 4
+  degradation: false
+
+device: cuda
+
+model:
+  name: edgesr_pruned
+  n_resblocks: 16
+  n_feats: 64
+  n_earb: 8
+  lcap_threshold: 0.01
+  prune_threshold: 0.5
+  pretrained: ./checkpoints/edgesr_standard_best.pt
+
+train:
+  epochs: 100
+  lr: 0.00005
+  weight_decay: 0.0001
+  lr_decay_step: 50
+  lr_decay_factor: 0.5
+  grad_clip: 1.0
+  loss: L1
+
+log:
+  log_dir: ./logs
+  save_dir: ./checkpoints
+  save_every: 50
+  eval_every: 50

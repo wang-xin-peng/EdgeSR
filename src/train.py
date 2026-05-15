@@ -2,8 +2,8 @@
 Training script for EdgeSR.
 
 Usage:
-    python src/train.py --config configs/default.yaml --model baseline
-    python src/train.py --config configs/default.yaml --model edgesr
+    python src/train.py --config configs/edgesr_standard.yaml --model baseline
+    python src/train.py --config configs/edgesr_standard.yaml --model edgesr
 """
 
 import os
@@ -18,6 +18,7 @@ from tqdm import tqdm
 
 from src.data.dataset import create_train_dataloader
 from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
+from src.models.edgesr_pruned import prune_model
 from src.loss import SSIMLoss
 
 
@@ -44,6 +45,25 @@ def get_model(config):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
         )
+    elif model_name == "edgesr_pruned":
+        pretrained_path = config["model"].get("pretrained")
+        prune_threshold = config["model"].get("prune_threshold", 0.5)
+        model = EdgeSR(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
+            lcap_threshold=0.01,
+        )
+        if pretrained_path:
+            ckpt = torch.load(pretrained_path, map_location="cpu")
+            model.load_state_dict(ckpt["model"])
+            print(f"Loaded pretrained EdgeSR from {pretrained_path}")
+        model = prune_model(model, threshold=prune_threshold)
+        active = sum(m.mask.sum().item() for m in model.modules() if hasattr(m, 'mask'))
+        total = sum(64 for m in model.modules() if hasattr(m, 'mask'))
+        print(f"Pruned: {int(total-active)}/{int(total)} channels removed at threshold={prune_threshold}")
+        return model
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -102,8 +122,8 @@ def validate(model, dataloader, device):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
+    parser.add_argument("--config", type=str, default="configs/edgesr_standard.yaml")
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap", "edgesr_pruned"])
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--resume", type=str, default=None)
     args = parser.parse_args()

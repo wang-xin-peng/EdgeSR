@@ -13,7 +13,8 @@
       "Bash(mv edgesr_best.pt edgesr_standard_best.pt)",
       "Bash(mv edgesr_best_synthetic_degradation.pt edgesr_degrad_best.pt)",
       "Bash(mv edgesr_best_realsr.pt edgesr_realsr_best.pt)",
-      "Bash(mv edgesr_best_drealsr.pt edgesr_drealsr_best.pt)"
+      "Bash(mv edgesr_best_drealsr.pt edgesr_drealsr_best.pt)",
+      "Bash(python -c ' *)"
     ]
   }
 }

@@ -2,7 +2,7 @@
 Gradio web demo for EdgeSR.
 
 Usage:
-    python src/gradio_app.py --config configs/default.yaml --model edgesr --checkpoint checkpoints/best.pt
+    python src/gradio_app.py --config configs/edgesr_standard.yaml --model edgesr --checkpoint checkpoints/edgesr_standard_best.pt
 """
 
 import os
@@ -15,6 +15,7 @@ from PIL import Image
 import tempfile
 
 from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
+from src.models.edgesr_pruned import prune_model
 
 
 def get_model(config, checkpoint_path, device):
@@ -40,6 +41,15 @@ def get_model(config, checkpoint_path, device):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
         )
+    elif model_name == "edgesr_pruned":
+        base = EdgeSR(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
+            lcap_threshold=0.01,
+        )
+        model = prune_model(base, threshold=config["model"].get("prune_threshold", 0.5))
     else:
         raise ValueError(f"Unknown model: {model_name}")
     checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -151,8 +161,8 @@ def create_demo(model, device):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
+    parser.add_argument("--config", type=str, default="configs/edgesr_standard.yaml")
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap", "edgesr_pruned"])
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--port", type=int, default=7860)

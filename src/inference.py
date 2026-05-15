@@ -4,8 +4,8 @@ Inference and visualization script.
 Generates SR results for images and creates comparison grids.
 
 Usage:
-    python src/inference.py --config configs/default.yaml --model edgesr \
-        --checkpoint checkpoints/best.pt --input ./data/benchmark/Set5 --output ./results
+    python src/inference.py --config configs/edgesr_standard.yaml --model edgesr \
+        --checkpoint checkpoints/edgesr_standard_best.pt --input ./data/benchmark/Set5 --output ./results
 """
 
 import os
@@ -21,6 +21,7 @@ import numpy as np
 from tqdm import tqdm
 
 from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
+from src.models.edgesr_pruned import prune_model
 
 
 def get_model(config, checkpoint_path, device):
@@ -46,6 +47,15 @@ def get_model(config, checkpoint_path, device):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
         )
+    elif model_name == "edgesr_pruned":
+        base = EdgeSR(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
+            lcap_threshold=0.01,
+        )
+        model = prune_model(base, threshold=config["model"].get("prune_threshold", 0.5))
     else:
         raise ValueError(f"Unknown model: {model_name}")
     checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -112,8 +122,8 @@ def save_side_by_side(lr_path, sr_path, hr_path, save_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
+    parser.add_argument("--config", type=str, default="configs/edgesr_standard.yaml")
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap", "edgesr_pruned"])
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--input", type=str, required=True, help="Input image or directory")
     parser.add_argument("--output", type=str, default="./results", help="Output directory")
