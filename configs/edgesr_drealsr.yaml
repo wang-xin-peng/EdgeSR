@@ -1,5 +1,6 @@
-# EdgeSR fine-tune config
-# Continue from DRealSR checkpoint with second-order degradation on DIV2K
+# EdgeSR DRealSR training config — real LR-HR pairs from DSLR zoom levels
+
+experiment: edgesr_drealsr
 
 data:
   div2k_root: ./data/DIV2K
@@ -10,8 +11,8 @@ data:
   train_batch_size: 16
   test_batch_size: 1
   num_workers: 4
-  degradation: true
-  use_drealsr: false
+  degradation: false
+  use_drealsr: true
   drealsr_root: ./data/DRealSR
 
 device: cuda
@@ -24,8 +25,8 @@ model:
   lcap_threshold: 0.01
 
 train:
-  epochs: 700
-  lr: 0.00005
+  epochs: 600
+  lr: 0.0002
   weight_decay: 0.0001
   lr_decay_step: 200
   lr_decay_factor: 0.5

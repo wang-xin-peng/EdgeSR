@@ -20,7 +20,7 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 
-from src.models import EDSRBaseline, EdgeSR
+from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
 
 
 def get_model(config, checkpoint_path, device):
@@ -38,6 +38,13 @@ def get_model(config, checkpoint_path, device):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
             lcap_threshold=config["model"]["lcap_threshold"],
+        )
+    elif model_name == "edgesr_nolcap":
+        model = EdgeSRNoLCAP(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
         )
     else:
         raise ValueError(f"Unknown model: {model_name}")
@@ -106,7 +113,7 @@ def save_side_by_side(lr_path, sr_path, hr_path, save_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr"])
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--input", type=str, required=True, help="Input image or directory")
     parser.add_argument("--output", type=str, default="./results", help="Output directory")

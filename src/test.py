@@ -15,7 +15,7 @@ from skimage.metrics import structural_similarity as ssim_func
 from tqdm import tqdm
 
 from src.data.dataset import create_test_dataloader
-from src.models import EDSRBaseline, EdgeSR
+from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
 
 
 def get_model(config, checkpoint_path, device):
@@ -33,6 +33,13 @@ def get_model(config, checkpoint_path, device):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
             lcap_threshold=config["model"]["lcap_threshold"],
+        )
+    elif model_name == "edgesr_nolcap":
+        model = EdgeSRNoLCAP(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
         )
     else:
         raise ValueError(f"Unknown model: {model_name}")
@@ -94,7 +101,7 @@ def evaluate(model, dataloader, device, lpips_model=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr"])
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--lpips", action="store_true", help="Compute LPIPS (requires lpips package)")

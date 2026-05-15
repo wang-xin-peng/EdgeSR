@@ -16,7 +16,7 @@ import random
 import io
 import math
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageEnhance
 from scipy.ndimage import convolve
 
 
@@ -119,6 +119,38 @@ def random_resize(img, factor):
 
 
 # ---------------------------------------------------------------------------
+# Color & ISP-style degradation (beyond Real-ESRGAN)
+# ---------------------------------------------------------------------------
+
+def color_jitter(img):
+    """Random brightness, contrast, saturation, and hue shift."""
+    if random.random() < 0.5:
+        factor = random.uniform(0.6, 1.4)
+        img = ImageEnhance.Brightness(img).enhance(factor)
+    if random.random() < 0.5:
+        factor = random.uniform(0.6, 1.4)
+        img = ImageEnhance.Contrast(img).enhance(factor)
+    if random.random() < 0.5:
+        factor = random.uniform(0.5, 1.5)
+        img = ImageEnhance.Color(img).enhance(factor)
+    return img
+
+
+def double_jpeg(img, base_quality=(30, 70), second_quality=(50, 85)):
+    """Apply JPEG twice with different quality — simulates re-compression."""
+    q1 = random.randint(*base_quality)
+    q2 = random.randint(*second_quality)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=q1)
+    buf.seek(0)
+    img = Image.open(buf).convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=q2)
+    buf.seek(0)
+    return Image.open(buf).convert("RGB")
+
+
+# ---------------------------------------------------------------------------
 # One stage of degradation
 # ---------------------------------------------------------------------------
 
@@ -133,6 +165,10 @@ def degrade_one_stage(img, scale_factor, prob=0.9):
     if random.random() < 0.6:
         out = random_blur(out)
 
+    # Color / ISP jitter (40% chance — before resize so it mimics ISP pipeline)
+    if random.random() < 0.4:
+        out = color_jitter(out)
+
     # Resize down
     if scale_factor > 1:
         out = random_resize(out, scale_factor)
@@ -141,9 +177,12 @@ def degrade_one_stage(img, scale_factor, prob=0.9):
     if random.random() < 0.5:
         out = random_noise(out)
 
-    # JPEG (40% chance)
+    # JPEG compression (40% chance single, 20% chance double)
     if random.random() < 0.4:
-        out = random_jpeg(out)
+        if random.random() < 0.3:
+            out = double_jpeg(out)
+        else:
+            out = random_jpeg(out)
 
     return out
 

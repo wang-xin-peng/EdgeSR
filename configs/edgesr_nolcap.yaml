@@ -1,4 +1,6 @@
-# EdgeSR DRealSR training config — real LR-HR pairs from DSLR zoom levels
+# EdgeSR ablation: EARB only, no LCAP
+
+experiment: edgesr_nolcap
 
 data:
   div2k_root: ./data/DIV2K
@@ -10,17 +12,14 @@ data:
   test_batch_size: 1
   num_workers: 4
   degradation: false
-  use_drealsr: true
-  drealsr_root: ./data/DRealSR
 
 device: cuda
 
 model:
-  name: edgesr
+  name: edgesr_nolcap
   n_resblocks: 16
   n_feats: 64
   n_earb: 8
-  lcap_threshold: 0.01
 
 train:
   epochs: 600

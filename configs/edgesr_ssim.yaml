@@ -1,5 +1,7 @@
 # EdgeSR final training — L1 + SSIM loss, continuation from fine-tuned checkpoint
 
+experiment: edgesr_ssim
+
 data:
   div2k_root: ./data/DIV2K
   flickr2k_root: ./data/Flickr2K

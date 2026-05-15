@@ -17,7 +17,7 @@ from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
 
 from src.data.dataset import create_train_dataloader
-from src.models import EDSRBaseline, EdgeSR
+from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
 from src.loss import SSIMLoss
 
 
@@ -36,6 +36,13 @@ def get_model(config):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
             lcap_threshold=config["model"]["lcap_threshold"],
+        )
+    elif model_name == "edgesr_nolcap":
+        return EdgeSRNoLCAP(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
         )
     else:
         raise ValueError(f"Unknown model: {model_name}")
@@ -96,7 +103,7 @@ def validate(model, dataloader, device):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr"])
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--resume", type=str, default=None)
     args = parser.parse_args()
@@ -114,6 +121,9 @@ if __name__ == "__main__":
     device = torch.device(device_str if (device_str == "cpu" or torch.cuda.is_available()) else "cpu")
     use_amp = device.type == "cuda"
     print(f"Using device: {device}, AMP: {use_amp}")
+
+    # Experiment name for checkpoint files
+    exp_name = config.get("experiment", config["model"]["name"])
 
     # Model
     model = get_model(config).to(device)
@@ -138,7 +148,8 @@ if __name__ == "__main__":
     scaler = GradScaler(enabled=use_amp)
     loss_type = config["train"].get("loss", "L1")
     if loss_type == "L1+SSIM":
-        loss_fn = lambda sr, hr: nn.L1Loss()(sr, hr) + 0.2 * SSIMLoss()(sr, hr)
+        ssim_fn = SSIMLoss()
+        loss_fn = lambda sr, hr: nn.L1Loss()(sr, hr) + 0.1 * ssim_fn(sr, hr)
     else:
         loss_fn = nn.L1Loss()
 
@@ -171,7 +182,7 @@ if __name__ == "__main__":
                     "optimizer": optimizer.state_dict(),
                     "scheduler": scheduler.state_dict(),
                     "psnr": val_psnr,
-                }, os.path.join(config["log"]["save_dir"], f"{config['model']['name']}_best.pt"))
+                }, os.path.join(config["log"]["save_dir"], f"{exp_name}_best.pt"))
                 print(f"  New best model saved (PSNR: {val_psnr:.4f})")
         else:
             print(f"Epoch [{epoch+1}/{config['train']['epochs']}] Loss: {train_loss:.6f}")
@@ -183,6 +194,6 @@ if __name__ == "__main__":
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict(),
                 "psnr": val_psnr if (epoch + 1) % config["log"]["eval_every"] == 0 else 0,
-            }, os.path.join(config["log"]["save_dir"], f"{config['model']['name']}_checkpoint_{epoch+1}.pt"))
+            }, os.path.join(config["log"]["save_dir"], f"{exp_name}_checkpoint_{epoch+1}.pt"))
 
         scheduler.step()

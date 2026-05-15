@@ -1,4 +1,7 @@
-# EdgeSR RealSR training config — real LR-HR pairs instead of synthetic degradation
+# EdgeSR fine-tune config
+# Continue from DRealSR checkpoint with second-order degradation on DIV2K
+
+experiment: edgesr_drealsr_ft
 
 data:
   div2k_root: ./data/DIV2K
@@ -9,9 +12,9 @@ data:
   train_batch_size: 16
   test_batch_size: 1
   num_workers: 4
-  degradation: false
-  use_realsr: true
-  realsr_root: ./data/RealSR (ICCV2019)
+  degradation: true
+  use_drealsr: false
+  drealsr_root: ./data/DRealSR
 
 device: cuda
 
@@ -23,8 +26,8 @@ model:
   lcap_threshold: 0.01
 
 train:
-  epochs: 600
-  lr: 0.0002
+  epochs: 1000
+  lr: 0.00005
   weight_decay: 0.0001
   lr_decay_step: 200
   lr_decay_factor: 0.5

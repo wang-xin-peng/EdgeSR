@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 import tempfile
 
-from src.models import EDSRBaseline, EdgeSR
+from src.models import EDSRBaseline, EdgeSR, EdgeSRNoLCAP
 
 
 def get_model(config, checkpoint_path, device):
@@ -32,6 +32,13 @@ def get_model(config, checkpoint_path, device):
             n_earb=config["model"]["n_earb"],
             scale=config["data"]["scale"],
             lcap_threshold=config["model"]["lcap_threshold"],
+        )
+    elif model_name == "edgesr_nolcap":
+        model = EdgeSRNoLCAP(
+            n_resblocks=config["model"]["n_resblocks"],
+            n_feats=config["model"]["n_feats"],
+            n_earb=config["model"]["n_earb"],
+            scale=config["data"]["scale"],
         )
     else:
         raise ValueError(f"Unknown model: {model_name}")
@@ -131,6 +138,7 @@ def create_demo(model, device):
             fn=process_and_show,
             inputs=[input_img, scale_selector],
             outputs=[gallery, sr_output, sr_path_state],
+            show_progress='hidden',
         )
         download_btn.click(
             fn=lambda path: path,
@@ -144,7 +152,7 @@ def create_demo(model, device):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/default.yaml")
-    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr"])
+    parser.add_argument("--model", type=str, default="edgesr", choices=["baseline", "edgesr", "edgesr_nolcap"])
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--port", type=int, default=7860)
