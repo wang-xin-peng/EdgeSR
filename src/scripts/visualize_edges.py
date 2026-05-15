@@ -84,7 +84,7 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
         axes[j].axis("off")
 
     plt.suptitle("Sobel Edge Maps from EARB Blocks", fontsize=14)
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     save_path = os.path.join(output_dir, "sobel_edges.png")
     fig.savefig(save_path, dpi=150)
     print(f"Edge maps saved to {save_path}")
@@ -103,9 +103,9 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
     axes[2].imshow(hr_img)
     axes[2].set_title(f"HR Ground Truth ({hr_img.size[0]}x{hr_img.size[1]})")
     axes[2].axis("off")
-    plt.tight_layout()
+    fig.tight_layout()
     save_path = os.path.join(output_dir, "sr_comparison.png")
-    fig.savefig(save_path, dpi=150)
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
     print(f"Comparison saved to {save_path}")
 
 
