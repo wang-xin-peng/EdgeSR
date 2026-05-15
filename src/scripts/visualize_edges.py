@@ -23,6 +23,7 @@ import torchvision.transforms.functional as TF
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.models.edgesr import EdgeSR
+from src.models.modules import SobelEdgeConv
 
 
 @torch.no_grad()
@@ -44,7 +45,6 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
     lr_tensor = TF.to_tensor(lr_img).unsqueeze(0)
 
     # Forward with edge map extraction
-    edge_maps = []
     activations = {}
 
     def hook_fn(name):
@@ -54,7 +54,7 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
 
     hooks = []
     for name, mod in model.named_modules():
-        if "sobel" in name and isinstance(mod, torch.nn.Conv2d):
+        if isinstance(mod, SobelEdgeConv):
             hooks.append(mod.register_forward_hook(hook_fn(name)))
 
     _ = model(lr_tensor)
@@ -63,7 +63,11 @@ def visualize_edges(checkpoint_path, image_path, output_dir="results"):
         h.remove()
 
     # Save Sobel edge maps
-    sobel_keys = sorted([k for k in activations if "sobel" in k])
+    sobel_keys = sorted(activations.keys())
+    n = len(sobel_keys)
+    if n == 0:
+        print("No SobelEdgeConv modules found. Check model structure.")
+        return
     n = len(sobel_keys)
     fig, axes = plt.subplots(2, (n + 1) // 2, figsize=(4 * ((n + 1) // 2), 8))
     axes = axes.flatten()

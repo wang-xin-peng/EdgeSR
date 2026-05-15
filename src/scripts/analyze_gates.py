@@ -58,9 +58,9 @@ def analyze_gates(checkpoint_path, output_dir="results"):
     print(f"\n{'Layer':<15} {'Mean':>6} {'Min':>6} {'Max':>6} {'<0.3':>6} {'<0.5':>6}")
     print("-" * 55)
     for info in layers_info:
-        lt03 = (info["gates"] < 0.3).sum()
-        lt05 = (info["gates"] < 0.5).sum()
-        print(f"{info['name']:<15} {info['mean']:>6.3f} {info['min']:>6.3f} {info['max']:>6.3f} {lt03:>6.0%} {lt05:>6.0%}")
+        lt03 = int((info["gates"] < 0.3).sum())
+        lt05 = int((info["gates"] < 0.5).sum())
+        print(f"{info['name']:<15} {info['mean']:>6.3f} {info['min']:>6.3f} {info['max']:>6.3f} {lt03:>6d} {lt05:>6d}")
 
     for thresh in [0.1, 0.2, 0.3, 0.4, 0.5]:
         pruned = (all_gates < thresh).sum()
