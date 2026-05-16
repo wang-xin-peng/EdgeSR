@@ -1,7 +1,7 @@
 # EdgeSR pruned: binary LCAP gating at threshold 0.5, then finetune
 # Start from edgesr_standard_best.pt, remove 40% channels, recover quality
 
-experiment: edgesr_pruned
+experiment: edgesr_pruned_03
 
 data:
   div2k_root: ./data/DIV2K
@@ -22,11 +22,11 @@ model:
   n_feats: 64
   n_earb: 8
   lcap_threshold: 0.01
-  prune_threshold: 0.5
+  prune_threshold: 0.3
   pretrained: ./checkpoints/edgesr_standard_best.pt
 
 train:
-  epochs: 100
+  epochs: 200
   lr: 0.00005
   weight_decay: 0.0001
   lr_decay_step: 50
