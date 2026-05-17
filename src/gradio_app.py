@@ -102,9 +102,8 @@ def create_demo(model, device):
         try:
             scale_factor = int(scale_factor)
             input_display, sr_pil = process_image(model, input_img, scale_factor, device)
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                sr_pil.save(tmp.name)
-                sr_path = tmp.name
+            sr_path = os.path.join(tempfile.gettempdir(), "edgesr_result.png")
+            sr_pil.save(sr_path)
             return input_display, sr_pil, sr_path
         except Exception as e:
             raise gr.Error(f"Processing failed: {str(e)}")
