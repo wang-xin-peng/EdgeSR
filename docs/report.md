@@ -6,7 +6,7 @@
 
 ## 摘要
 
-图像超分辨率（Super-Resolution, SR）旨在从低分辨率（LR）图像重建高分辨率（HR）图像。本文提出 EdgeSR，一种 1.44M 参数的边缘感知超分辨率模型，通过两个核心模块——Edge-Aware Residual Block（EARB）和 Lightweight Channel Attention Pruning（LCAP）——在标准超分任务中保持与 EDSR Baseline 同等质量的同时，实现了对通道重要性的定量分析。实验表明：EARB 的 Sobel 边缘分支带来了 0.02 dB 的改善；LCAP 揭示了标准 ResBlock 中 37% 的通道存在冗余；几何自集成（Self-ensemble）可在推理时进一步提升 0.1 dB。此外，本文还探索了盲超分辨率（Blind SR）任务，验证了固定参数规模下模型处理真实退化的能力边界。
+图像超分辨率（Super-Resolution, SR）旨在从低分辨率（LR）图像重建高分辨率（HR）图像。本文提出 EdgeSR，一种边缘感知超分辨率模型（1,436,931 参数），通过两个核心模块——Edge-Aware Residual Block（EARB）和 Lightweight Channel Attention Pruning（LCAP）——在标准超分任务中保持与 EDSR Baseline 同等质量的同时，实现了对通道重要性的定量分析。实验表明：EARB 的 Sobel 边缘分支带来了 0.02 dB 的改善；LCAP 揭示了标准 ResBlock 中 37% 的通道存在冗余；几何自集成（Self-ensemble）可在推理时进一步提升 0.1 dB。此外，本文还探索了盲超分辨率（Blind SR）任务，验证了固定参数规模下模型处理真实退化的能力边界。
 
 ---
 
