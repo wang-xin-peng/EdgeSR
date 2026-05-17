@@ -524,9 +524,12 @@ HR → 第一阶: 模糊 → 下采样 → 噪声 → JPEG
 
 ![comic 对比](tmp/comic_compare.png)
 
-**图5：真实模糊照片在不同模型下的 SR 效果对比。** 从左至右依次为：LR 输入、标准 EdgeSR、退化模型、DRealSR 微调、SSIM 模型输出。
+**图5：真实模糊照片在不同模型下的 SR 效果对比（每组左：LR 输入，右：对应模型输出）。**
 
-![真实照片对比](tmp/zhenshi_compare.png)
+![标准 EdgeSR](tmp/zn_standard_compare.png)
+![退化模型](tmp/zn_degrad_compare.png)
+![DRealSR 微调](tmp/zn_drealsr_ft_compare.png)
+![SSIM 模型](tmp/zn_ssim_compare.png)
 
 从真实照片的对比可以看出：
 - 标准 EdgeSR 的输出线条略显模糊，对真实退化没有针对性处理
