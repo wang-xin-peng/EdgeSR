@@ -1,0 +1,30 @@
+# Worktrees
+.worktrees/
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Data (only track directory structure)
+data/**
+!data/**/.gitkeep
+
+# Output
+logs/
+verify_output/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+venv/
+.venv/
+
+# Training logs
+*.log

@@ -1,0 +1,45 @@
+# EdgeSR default configuration
+
+experiment: edgesr_degrad
+
+# Data
+data:
+  div2k_root: ./data/DIV2K
+  flickr2k_root: ./data/Flickr2K
+  test_root: ./data/benchmark
+  patch_size: 192  # HR patch size
+  scale: 2
+  train_batch_size: 16
+  test_batch_size: 1
+  num_workers: 4
+  degradation: true  # apply blur/noise/JPEG before downsampling for real-world robustness
+  use_drealsr: false  # use DRealSR real LR-HR pairs instead of synthetic degradation
+  drealsr_root: ./data/DRealSR
+
+# Device
+device: cuda  # cuda (default) | cpu | auto
+
+# Model
+model:
+  name: edgesr  # baseline | edgesr
+  n_resblocks: 16
+  n_feats: 64
+  n_earb: 8     # number of EARB blocks (0 for baseline)
+  lcap_threshold: 0.01  # channels with gate below this threshold are pruned at inference
+
+# Training
+train:
+  epochs: 600
+  lr: 0.0002
+  weight_decay: 0.0001
+  lr_decay_step: 200
+  lr_decay_factor: 0.5
+  grad_clip: 1.0
+  loss: L1  # L1 | L1+SSIM
+
+# Logging
+log:
+  log_dir: ./logs
+  save_dir: ./checkpoints
+  save_every: 50
+  eval_every: 50
