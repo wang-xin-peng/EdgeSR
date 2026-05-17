@@ -522,20 +522,23 @@ HR → 第一阶: 模糊 → 下采样 → 噪声 → JPEG
 
 **图4：Set14/comic 的 SR 效果对比。** 左：LR 输入（Bicubic 放大），右：EdgeSR 标准模型输出。
 
-![comic 对比](tmp/comic_compare.png)
+![comic LR vs EdgeSR](../tmp/comic_compare.png)
 
-**图5：真实模糊照片在不同模型下的 SR 效果对比（每组左：LR 输入，右：对应模型输出）。**
+**图5：真实模糊照片效果对比（每组左：LR 原图，右：对应模型 SR 结果）。**
 
-![标准 EdgeSR](tmp/zn_standard_compare.png)
-![退化模型](tmp/zn_degrad_compare.png)
-![DRealSR 微调](tmp/zn_drealsr_ft_compare.png)
-![SSIM 模型](tmp/zn_ssim_compare.png)
+![LR vs 标准 EdgeSR](../tmp/zn_standard_compare.png)
+
+![LR vs 退化模型](../tmp/zn_degrad_compare.png)
+
+![LR vs DRealSR 微调](../tmp/zn_drealsr_ft_compare.png)
+
+![LR vs SSIM 模型](../tmp/zn_ssim_compare.png)
 
 从真实照片的对比可以看出：
-- 标准 EdgeSR 的输出线条略显模糊，对真实退化没有针对性处理
-- 退化模型有微小改善，但提升有限
-- DRealSR 微调和 SSIM 模型效果明显更清晰，两者差距很小，但与原图相比仍不够锐利
+- 标准 EdgeSR 的输出线条略显模糊，对真实退化没有针对性处理，肉眼无法察觉前后区别
+- 退化模型有微小改善，但提升有限，肉眼同样无法察觉前后区别
 - RealSR、DRealSR 基础模型与退化模型效果肉眼几乎无法区分，故未单独列出
+- DRealSR 微调和 SSIM 模型效果明显清晰一些，但两者差距很小，且与原图相比仍不够锐利，效果不够好
 - 整体而言，退化训练确实能改善真实照片的 SR 效果，但受限于 1.44M 的参数量，无法达到足够清晰的还原
 
 ---
@@ -680,7 +683,7 @@ python -m src.gradio_app --config configs/edgesr_standard.yaml --model edgesr --
 │   │   └── visualize_edges.py # Sobel可视化
 │   ├── train.py              # 训练脚本
 │   ├── test.py               # 测试脚本
-│   └── gradio_app.py         # 网页demo
+│   └── gradio_app.py         # 网页推理演示
 ├── checkpoints/
 │   ├── baseline_best.pt                  # EDSR Baseline
 │   ├── edgesr_standard_best.pt           # EdgeSR 标准
