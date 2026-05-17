@@ -1,0 +1,16 @@
+nohup: ignoring input
+/input0/transcoder-st/learn_llm/edgesr/src/train.py:137: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(enabled=use_amp)
+Using device: cuda, AMP: True
+Model: baseline, Parameters: 1,369,859
+Training samples: 55510
+  with autocast():
+  New best model saved (PSNR: 37.4553)
+  New best model saved (PSNR: 37.5638)
+  New best model saved (PSNR: 37.6599)
+  New best model saved (PSNR: 37.7179)
+  New best model saved (PSNR: 37.7408)
+  New best model saved (PSNR: 37.7497)
+  New best model saved (PSNR: 37.7662)
+  New best model saved (PSNR: 37.7713)
+  New best model saved (PSNR: 37.7743)
