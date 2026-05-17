@@ -257,7 +257,7 @@ SR = (1/8) × Σ transform⁻¹( model(transform(LR)) )
 | 初始学习率 | 2 × 10⁻⁴ | 经实验验证对 SR 任务有效 |
 | 学习率衰减 | StepLR（每 200 epoch 乘 0.5） | 分阶段降低学习率 |
 | 训练轮数 | 600 | 观察 loss 约在 500 epoch 后趋于稳定 |
-| Batch Size | 16 | 受 GPU 显存限制（A800 80GB 可支持更大 batch）|
+| Batch Size | 16 | 实验中固定为 16，实际可支持更大 batch |
 | 损失函数 | L1 Loss | 相比 L2 Loss，L1 对离群点更鲁棒，SR 任务中更常用 |
 | 梯度裁剪 | 1.0 | 防止梯度爆炸 |
 | 权重衰减 | 1 × 10⁻⁴ | 权重衰减正则化 |
