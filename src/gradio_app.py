@@ -117,7 +117,7 @@ def create_demo(model, device):
         with gr.Row():
             with gr.Column():
                 input_img = gr.Image(label="输入图像", type="pil")
-                submit_btn = gr.Button("✨ 生成超分辨率图像", variant="primary")
+                submit_btn = gr.Button("生成超分辨率图像", variant="primary")
             with gr.Column():
                 with gr.Tab("对比视图"):
                     gallery = gr.Gallery(
@@ -128,7 +128,7 @@ def create_demo(model, device):
                     )
                 with gr.Tab("结果"):
                     sr_output = gr.Image(label="超分辨率输出", type="pil")
-                download_btn = gr.DownloadButton(label="📥 下载结果", variant="secondary")
+                download_btn = gr.DownloadButton(label="下载结果", variant="secondary")
 
         sr_path_state = gr.State()
 

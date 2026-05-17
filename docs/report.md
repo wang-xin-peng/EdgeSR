@@ -522,15 +522,11 @@ HR → 第一阶: 模糊 → 下采样 → 噪声 → JPEG
 
 **图4：Set14/comic 的 SR 效果对比。** 左：LR 输入（Bicubic 放大），右：EdgeSR 标准模型输出。
 
-![comic LR 输入](tmp/comic.png) ![comic EdgeSR 输出](tmp/comic_standard.png)
+![comic 对比](tmp/comic_compare.png)
 
-**图5：真实模糊照片在不同模型下的 SR 效果对比。** 从上到下依次为：LR 输入、标准 EdgeSR、退化模型、DRealSR 微调、SSIM 模型输出。
+**图5：真实模糊照片在不同模型下的 SR 效果对比。** 从左至右依次为：LR 输入、标准 EdgeSR、退化模型、DRealSR 微调、SSIM 模型输出。
 
-![真实照片 LR](tmp/zhenshi.png)
-![标准 EdgeSR](tmp/zhenshi_standard.png)
-![退化模型](tmp/zhenshi_degrad.png)
-![DRealSR 微调](tmp/zhenshi_drealsr_ft.png)
-![SSIM 模型](tmp/zhenshi_ssim.png)
+![真实照片对比](tmp/zhenshi_compare.png)
 
 从真实照片的对比可以看出：
 - 标准 EdgeSR 的输出线条略显模糊，对真实退化没有针对性处理

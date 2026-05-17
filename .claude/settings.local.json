@@ -22,7 +22,13 @@
       "Bash(sort -k5 -h -r)",
       "Bash(head-3)",
       "Bash(git checkout *)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(ls *.tmp *.zip)",
+      "Bash(git mv *)",
+      "Bash(E:/conda_envs/cvenv/python.exe .tmp_update_structure.py)",
+      "Bash(E:/conda_envs/cvenv/python.exe .tmp_update.py)",
+      "Bash(python -c \"from PIL import Image; print\\('comic:', Image.open\\('tmp/comic.png'\\).size\\); print\\('comic_standard:', Image.open\\('tmp/comic_standard.png'\\).size\\)\")",
+      "Bash(E:/conda_envs/cvenv/python.exe .tmp_make_figures.py)"
     ]
   }
 }
