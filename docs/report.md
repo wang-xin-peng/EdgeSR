@@ -522,13 +522,22 @@ HR → 第一阶: 模糊 → 下采样 → 噪声 → JPEG
 
 **图4：Set14/comic 的 SR 效果对比。** 左：LR 输入（Bicubic 放大），右：EdgeSR 标准模型输出。
 
-**图5：真实模糊照片在不同模型下的 SR 效果对比。** 从左至右依次为：LR 输入、标准 EdgeSR、退化模型、DRealSR 微调、SSIM 模型输出。
+![comic LR 输入](tmp/comic.png) ![comic EdgeSR 输出](tmp/comic_standard.png)
+
+**图5：真实模糊照片在不同模型下的 SR 效果对比。** 从上到下依次为：LR 输入、标准 EdgeSR、退化模型、DRealSR 微调、SSIM 模型输出。
+
+![真实照片 LR](tmp/zhenshi.png)
+![标准 EdgeSR](tmp/zhenshi_standard.png)
+![退化模型](tmp/zhenshi_degrad.png)
+![DRealSR 微调](tmp/zhenshi_drealsr_ft.png)
+![SSIM 模型](tmp/zhenshi_ssim.png)
 
 从真实照片的对比可以看出：
-- 标准模型的线条略显模糊，对真实退化没有针对性处理
-- 退化模型在边缘锐度上有微小改善，但提升幅度有限
-- RealSR、DRealSR 等真实数据训练的模型与退化模型效果肉眼几乎无法区分，故未单独列出
-- 所有模型在真实照片上的表现差异不大，主要原因是模型参数量（1.44M）有限，无法充分学习复杂的真实退化分布
+- 标准 EdgeSR 的输出线条略显模糊，对真实退化没有针对性处理
+- 退化模型有微小改善，但提升有限
+- DRealSR 微调和 SSIM 模型效果明显更清晰，两者差距很小，但与原图相比仍不够锐利
+- RealSR、DRealSR 基础模型与退化模型效果肉眼几乎无法区分，故未单独列出
+- 整体而言，退化训练确实能改善真实照片的 SR 效果，但受限于 1.44M 的参数量，无法达到足够清晰的还原
 
 ---
 
