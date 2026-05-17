@@ -28,7 +28,8 @@
       "Bash(E:/conda_envs/cvenv/python.exe .tmp_update_structure.py)",
       "Bash(E:/conda_envs/cvenv/python.exe .tmp_update.py)",
       "Bash(python -c \"from PIL import Image; print\\('comic:', Image.open\\('tmp/comic.png'\\).size\\); print\\('comic_standard:', Image.open\\('tmp/comic_standard.png'\\).size\\)\")",
-      "Bash(E:/conda_envs/cvenv/python.exe .tmp_make_figures.py)"
+      "Bash(E:/conda_envs/cvenv/python.exe .tmp_make_figures.py)",
+      "Bash(python -c \"from PIL import Image; [print\\(f'{f}: {Image.open\\(\\\\\"tmp/\\\\\"+f\\).size}'\\) for f in ['zhenshi.png','zhenshi_standard.png','zhenshi_degrad.png','zhenshi_drealsr_ft.png','zhenshi_ssim.png']]\")"
     ]
   }
 }
