@@ -9,8 +9,9 @@ __pycache__/
 dist/
 build/
 
-# Data
-data/
+# Data (only track directory structure)
+data/**
+!data/**/.gitkeep
 
 # Output
 logs/
