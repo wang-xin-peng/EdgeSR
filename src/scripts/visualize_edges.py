@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.models.edgesr import EdgeSR
 from src.models.baseline import EDSRBaseline
-from src.models.modules import SobelEdgeConv
+from src.models.modules import SobelEdgeConv, LCAP
 
 
 @torch.no_grad()
@@ -56,8 +56,12 @@ def visualize_edges(checkpoint_path, baseline_checkpoint, image_path, output_dir
 
     hooks = []
     for name, mod in model.named_modules():
-        if isinstance(mod, SobelEdgeConv):
-            hooks.append(mod.register_forward_hook(hook_fn(name)))
+        if isinstance(mod, LCAP):
+            parts = name.split(".")
+            idx = int(parts[-1])
+            # LCAP layers at odd indices 17..31 follow EARB blocks
+            if 17 <= idx <= 31 and idx % 2 == 1:
+                hooks.append(mod.register_forward_hook(hook_fn(name)))
 
     _ = model(lr_tensor)
 
@@ -85,7 +89,7 @@ def visualize_edges(checkpoint_path, baseline_checkpoint, image_path, output_dir
     for j in range(i + 1, len(axes)):
         axes[j].axis("off")
 
-    plt.suptitle("Sobel Edge Maps from EARB Blocks", fontsize=14)
+    plt.suptitle("EARB Features (post-LCAP gating)", fontsize=14)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     save_path = os.path.join(output_dir, "sobel_edges.png")
     fig.savefig(save_path, dpi=150)
