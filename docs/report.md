@@ -630,6 +630,13 @@ python src/gradio_app.py --config configs/edgesr_standard.yaml --model edgesr --
 │   ├── edgesr_nolcap.yaml      # 消融（无 LCAP）
 │   ├── edgesr_pruned.yaml      # 剪枝微调
 │   └── edgesr_ssim.yaml        # L1+SSIM 损失
+├── data/
+│   ├── DIV2K/             # DIV2K 训练数据集
+│   ├── Flickr2K/          # Flickr2K 训练数据集
+│   ├── benchmark/         # 测试基准（Set5/Set14/BSD100）
+│   ├── DRealSR/           # DRealSR 真实退化数据集
+│   └── RealSR/            # RealSR 真实退化数据集
+├── results/               # 可视化结果（门控图、边缘图、差值图）
 ├── src/
 │   ├── models/
 │   │   ├── baseline.py       # EDSR Baseline
