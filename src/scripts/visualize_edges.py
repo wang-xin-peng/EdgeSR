@@ -81,7 +81,7 @@ def visualize_edges(checkpoint_path, baseline_checkpoint, image_path, output_dir
     for i, key in enumerate(sobel_keys):
         edge = activations[key]
         edge_mag = edge.pow(2).sum(dim=1, keepdim=True).sqrt()
-        edge_img = edge_mag[0, 0].cpu().numpy()
+        edge_img = edge_mag[0].mean(dim=0).cpu().numpy()
         axes[i].imshow(edge_img, cmap="inferno")
         axes[i].set_title(f"EARB {key.split('.')[1]}")
         axes[i].axis("off")
