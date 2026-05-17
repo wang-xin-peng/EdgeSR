@@ -649,7 +649,16 @@ python src/gradio_app.py --config configs/edgesr_standard.yaml --model edgesr --
 ### C. 项目结构
 
 ```
-├── configs/            # 配置文件（每个实验独立）
+├── configs/
+│   ├── baseline.yaml           # EDSR Baseline
+│   ├── edgesr_standard.yaml    # EdgeSR 标准
+│   ├── edgesr_degrad.yaml      # 退化增强
+│   ├── edgesr_realsr.yaml      # RealSR 数据
+│   ├── edgesr_drealsr.yaml     # DRealSR 数据
+│   ├── edgesr_drealsr_ft.yaml  # DRealSR 微调
+│   ├── edgesr_nolcap.yaml      # 消融（无 LCAP）
+│   ├── edgesr_pruned.yaml      # 剪枝微调
+│   └── edgesr_ssim.yaml        # L1+SSIM 损失
 ├── src/
 │   ├── models/
 │   │   ├── baseline.py       # EDSR Baseline
