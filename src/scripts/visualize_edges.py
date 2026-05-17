@@ -59,7 +59,7 @@ def visualize_edges(checkpoint_path, baseline_checkpoint, image_path, output_dir
         if isinstance(mod, LCAP):
             parts = name.split(".")
             idx = int(parts[-1])
-            # LCAP layers at odd indices 17..31 follow EARB blocks
+            # LCAP at body.N gates EARB at body.(N-1); indices 17,19..31 → EARB 16,18..30
             if 17 <= idx <= 31 and idx % 2 == 1:
                 hooks.append(mod.register_forward_hook(hook_fn(name)))
 
@@ -83,7 +83,9 @@ def visualize_edges(checkpoint_path, baseline_checkpoint, image_path, output_dir
         edge_mag = edge.pow(2).sum(dim=1, keepdim=True).sqrt()
         edge_img = edge_mag[0].mean(dim=0).cpu().numpy()
         axes[i].imshow(edge_img, cmap="inferno")
-        axes[i].set_title(f"EARB {key.split('.')[1]}")
+        lcap_idx = int(key.split(".")[1])
+        earb_idx = lcap_idx - 1  # LCAP at body.N gates EARB at body.(N-1)
+        axes[i].set_title(f"EARB {earb_idx}")
         axes[i].axis("off")
 
     for j in range(i + 1, len(axes)):
