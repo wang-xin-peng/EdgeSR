@@ -110,7 +110,7 @@ def create_demo(model, device):
     with gr.Blocks(title="EdgeSR - Image Super-Resolution") as demo:
         gr.Markdown(
             """
-            # EdgeSR: 边缘感知图像超分辨率演示
+            # EdgeSR: 边缘感知图像超分辨率系统
             **上传一张图片，一键生成 ×2 超分辨率图像。**
             """
         )
