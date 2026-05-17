@@ -109,10 +109,10 @@ def create_demo(model, device):
         except Exception as e:
             raise gr.Error(f"Processing failed: {str(e)}")
 
-    with gr.Blocks(title="EdgeSR - Image Super-Resolution", theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(title="EdgeSR - Image Super-Resolution") as demo:
         gr.Markdown(
             """
-            # EdgeSR: 轻量级图像超分辨率系统
+            # EdgeSR: 边缘感知图像超分辨率系统
             **上传一张图片，选择放大倍数，一键生成高清图像。**
             """
         )
@@ -179,4 +179,5 @@ if __name__ == "__main__":
     print("Model loaded. Launching Gradio demo...")
 
     demo = create_demo(model, device)
-    demo.launch(server_name="0.0.0.0", server_port=args.port, share=args.share)
+    print(f"Access at: http://localhost:{args.port}")
+    demo.launch(server_name="0.0.0.0", server_port=args.port, share=args.share, theme=gr.themes.Soft())
