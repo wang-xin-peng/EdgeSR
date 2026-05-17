@@ -96,12 +96,11 @@ def process_image(model, input_img, scale_factor, device):
 
 def create_demo(model, device):
     """Create the Gradio interface."""
-    def super_resolve(input_img, scale_factor):
+    def super_resolve(input_img):
         if input_img is None:
             return None, None, None
         try:
-            scale_factor = int(scale_factor)
-            input_display, sr_pil = process_image(model, input_img, scale_factor, device)
+            input_display, sr_pil = process_image(model, input_img, 2, device)
             sr_path = os.path.join(tempfile.gettempdir(), "edgesr_result.png")
             sr_pil.save(sr_path)
             return input_display, sr_pil, sr_path
@@ -112,18 +111,12 @@ def create_demo(model, device):
         gr.Markdown(
             """
             # EdgeSR: 边缘感知图像超分辨率系统
-            **上传一张图片，选择放大倍数，一键生成高清图像。**
+            **上传一张图片，一键生成 ×2 超分辨率图像。**
             """
         )
         with gr.Row():
             with gr.Column():
                 input_img = gr.Image(label="输入图像", type="pil")
-                scale_selector = gr.Radio(
-                    choices=[2],
-                    value=2,
-                    label="放大倍数",
-                    info="2x"
-                )
                 submit_btn = gr.Button("✨ 生成超分辨率图像", variant="primary")
             with gr.Column():
                 with gr.Tab("对比视图"):
@@ -139,15 +132,15 @@ def create_demo(model, device):
 
         sr_path_state = gr.State()
 
-        def process_and_show(input_img, scale_factor):
-            input_display, sr_pil, sr_path = super_resolve(input_img, scale_factor)
+        def process_and_show(input_img):
+            input_display, sr_pil, sr_path = super_resolve(input_img)
             input_path = os.path.join(tempfile.gettempdir(), "edgesr_input.png")
             input_display.save(input_path)
             return [input_path, sr_path], sr_pil, sr_path
 
         submit_btn.click(
             fn=process_and_show,
-            inputs=[input_img, scale_selector],
+            inputs=[input_img],
             outputs=[gallery, sr_output, sr_path_state],
             show_progress='hidden',
         )
