@@ -120,10 +120,10 @@ def create_demo(model, device):
             with gr.Column():
                 input_img = gr.Image(label="输入图像", type="pil")
                 scale_selector = gr.Radio(
-                    choices=[2, 4],
+                    choices=[2],
                     value=2,
                     label="放大倍数",
-                    info="2x (推荐) 或 4x"
+                    info="2x"
                 )
                 submit_btn = gr.Button("✨ 生成超分辨率图像", variant="primary")
             with gr.Column():
