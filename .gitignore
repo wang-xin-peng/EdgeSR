@@ -6,8 +6,16 @@ dist/
 build/
 
 # Data (only track directory structure)
-data/**/*
-!data/**/.gitkeep
+# 先忽略 data 目录下的所有内容
+data/*
+
+# 但保留 data 目录本身（如果你有空的 data 目录要跟踪）
+!data/
+
+# 只跟踪 .gitkeep 文件，忽略其他所有内容
+!data/.gitkeep
+!data/*/.gitkeep
+!data/*/*/.gitkeep
 
 # IDE
 .vscode/
