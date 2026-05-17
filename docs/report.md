@@ -648,5 +648,29 @@ python src/gradio_app.py --config configs/edgesr_standard.yaml --model edgesr --
 │   ├── train.py              # 训练脚本
 │   ├── test.py               # 测试脚本
 │   └── gradio_app.py         # 网页demo
-└── checkpoints/       # 预训练权重
+├── checkpoints/
+│   ├── baseline_best.pt                  # EDSR Baseline
+│   ├── edgesr_standard_best.pt           # EdgeSR 标准
+│   ├── edgesr_degrad_best.pt             # 退化增强
+│   ├── edgesr_realsr_best.pt             # RealSR
+│   ├── edgesr_drealsr_best.pt            # DRealSR
+│   ├── edgesr_drealsr_ft_best.pt         # DRealSR 微调
+│   ├── edgesr_drealsr_ft_checkpoint_100.pt
+│   ├── edgesr_nolcap_best.pt             # 消融（无 LCAP）
+│   ├── edgesr_ssim_best.pt               # SSIM loss
+│   ├── edgesr_pruned_03_best.pt          # 剪枝 0.3
+│   ├── edgesr_pruned_04_best.pt          # 剪枝 0.4
+│   └── edgesr_pruned_05_best.pt          # 剪枝 0.5
+└── logs/
+    ├── train_baseline.log
+    ├── train_edgesr_standard.log
+    ├── train_edgesr_degrad.log
+    ├── train_edgesr_realsr.log
+    ├── train_edgesr_drealsr.log
+    ├── train_edgesr_drealsr_ft.log
+    ├── train_edgesr_nolcap.log
+    ├── train_edgesr_ssim.log
+    ├── train_edgesr_pruned_03.log
+    ├── train_edgesr_pruned_04.log
+    └── train_edgesr_pruned_05.log
 ```
