@@ -6,7 +6,8 @@ dist/
 build/
 
 # Data (only track directory structure)
-data/**
+data/*
+!data/.gitkeep
 !data/**/.gitkeep
 
 # IDE
