@@ -141,7 +141,9 @@ def create_demo(model, device):
 
         def process_and_show(input_img, scale_factor):
             input_display, sr_pil, sr_path = super_resolve(input_img, scale_factor)
-            return [input_display, sr_pil], sr_pil, sr_path
+            input_path = os.path.join(tempfile.gettempdir(), "edgesr_input.png")
+            input_display.save(input_path)
+            return [input_path, sr_path], sr_pil, sr_path
 
         submit_btn.click(
             fn=process_and_show,
